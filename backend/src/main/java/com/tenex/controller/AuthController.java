@@ -164,7 +164,9 @@ public class AuthController {
                 registerTenantRequest.getAdminUsername(),
                 registerTenantRequest.getAdminEmail(),
                 encoder.encode(registerTenantRequest.getAdminPassword()),
-                registerTenantRequest.getTenantId()
+                registerTenantRequest.getTenantId(),
+                true,
+                false
         );
 
         // Assign roles

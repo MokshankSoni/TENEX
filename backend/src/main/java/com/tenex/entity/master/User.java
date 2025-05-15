@@ -67,6 +67,17 @@ public class User {
         this.tenantId = tenantId;
     }
 
+    public User(String adminUsername, String adminEmail, String encode, String tenantId,Boolean isTenantAdmin,Boolean isSuperAdmin) {
+        this.username = adminUsername;
+        this.email = adminEmail;
+        this.password = encode;
+        this.tenantId = tenantId;
+        this.isTenantAdmin = isTenantAdmin;
+        this.isSuperAdmin = isSuperAdmin;
+    }
+
+
+
     public Long getId() {
         return id;
     }
