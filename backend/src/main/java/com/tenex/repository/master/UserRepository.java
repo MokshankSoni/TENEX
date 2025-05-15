@@ -9,8 +9,6 @@ import com.tenex.entity.master.User;
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
 
-    Optional<User> findByUsernameAndTenantId(String username, String tenantId);
-
     Boolean existsByUsername(String username);
 
     Boolean existsByEmail(String email);
