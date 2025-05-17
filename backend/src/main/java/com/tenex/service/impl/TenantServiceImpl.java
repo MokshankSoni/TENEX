@@ -99,6 +99,7 @@ public class TenantServiceImpl implements TenantService {
             // Create projects table
             stmt.execute("CREATE TABLE IF NOT EXISTS " + tenantId + ".projects (" +
                     "id SERIAL PRIMARY KEY, " +
+                    "tenant_id VARCHAR(255) NOT NULL, " +
                     "name VARCHAR(255) NOT NULL, " +
                     "description TEXT, " +
                     "start_date DATE, " +
@@ -117,6 +118,8 @@ public class TenantServiceImpl implements TenantService {
                     "status VARCHAR(50), " +
                     "priority VARCHAR(50), " +
                     "assigned_to BIGINT, " +
+                    "created_by BIGINT NOT NULL, " +
+                    "estimated_time INT, " +
                     "due_date DATE, " +
                     "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                     "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
@@ -130,6 +133,7 @@ public class TenantServiceImpl implements TenantService {
                     "user_id BIGINT NOT NULL, " +
                     "content TEXT NOT NULL, " +
                     "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                    "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                     "CONSTRAINT fk_task FOREIGN KEY(task_id) REFERENCES " + tenantId + ".tasks(id)" +
                     ")");
 
@@ -137,6 +141,7 @@ public class TenantServiceImpl implements TenantService {
             stmt.execute("CREATE TABLE IF NOT EXISTS " + tenantId + ".user_project_assignments (" +
                     "user_id BIGINT NOT NULL, " +
                     "project_id BIGINT NOT NULL, " +
+                    "role_in_project VARCHAR(50), " +
                     "assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                     "PRIMARY KEY (user_id, project_id), " +
                     "FOREIGN KEY (project_id) REFERENCES " + tenantId + ".projects(id)" +
@@ -150,7 +155,8 @@ public class TenantServiceImpl implements TenantService {
                     "file_name VARCHAR(255), " +
                     "file_type VARCHAR(100), " +
                     "file_url TEXT, " +
-                    "uploaded_by BIGINT, " +
+                    "uploaded_by BIGINT NOT NULL, " +
+                    "file_size BIGINT, " +
                     "uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP" +
                     ")");
 
@@ -170,9 +176,29 @@ public class TenantServiceImpl implements TenantService {
                     "task_id BIGINT NOT NULL, " +
                     "old_status VARCHAR(50), " +
                     "new_status VARCHAR(50), " +
-                    "changed_by BIGINT, " +
+                    "changed_by BIGINT NOT NULL, " +
                     "changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                     "FOREIGN KEY (task_id) REFERENCES " + tenantId + ".tasks(id)" +
+                    ")");
+
+            // Create task_checklists table
+            stmt.execute("CREATE TABLE IF NOT EXISTS " + tenantId + ".task_checklists (" +
+                    "id SERIAL PRIMARY KEY, " +
+                    "task_id BIGINT NOT NULL, " +
+                    "item TEXT NOT NULL, " +
+                    "completed BOOLEAN DEFAULT FALSE, " +
+                    "FOREIGN KEY (task_id) REFERENCES " + tenantId + ".tasks(id)" +
+                    ")");
+
+            // Create project_milestones table
+            stmt.execute("CREATE TABLE IF NOT EXISTS " + tenantId + ".project_milestones (" +
+                    "id SERIAL PRIMARY KEY, " +
+                    "project_id BIGINT NOT NULL, " +
+                    "title VARCHAR(255) NOT NULL, " +
+                    "description TEXT, " +
+                    "due_date DATE, " +
+                    "completed BOOLEAN DEFAULT FALSE, " +
+                    "FOREIGN KEY (project_id) REFERENCES " + tenantId + ".projects(id)" +
                     ")");
 
         } catch (SQLException e) {
