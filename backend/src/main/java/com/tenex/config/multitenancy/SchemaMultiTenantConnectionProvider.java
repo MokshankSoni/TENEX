@@ -22,6 +22,9 @@ public class SchemaMultiTenantConnectionProvider implements MultiTenantConnectio
     public Connection getConnection(String tenantIdentifier) throws SQLException {
         final Connection connection = dataSource.getConnection();
         try {
+            // First set the search path to include the tenant schema
+            connection.createStatement().execute("SET search_path TO " + tenantIdentifier + ", public");
+            // Then explicitly set the schema
             connection.setSchema(tenantIdentifier);
             logger.debug("Switched to schema: {}", tenantIdentifier);
         } catch (SQLException e) {
@@ -33,7 +36,16 @@ public class SchemaMultiTenantConnectionProvider implements MultiTenantConnectio
 
     @Override
     public Connection getAnyConnection() throws SQLException {
-        return dataSource.getConnection();
+        final Connection connection = dataSource.getConnection();
+        try {
+            // Set default search path for non-tenant operations
+            connection.createStatement().execute("SET search_path TO public");
+            connection.setSchema("public");
+        } catch (SQLException e) {
+            logger.error("Error setting default schema", e);
+            throw e;
+        }
+        return connection;
     }
 
     @Override

@@ -16,12 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
-@EnableJpaRepositories(
-        basePackages = "com.tenex.repository.tenant",
-        entityManagerFactoryRef = "tenantEntityManagerFactory",
-        transactionManagerRef = "tenantTransactionManager"
-)
-
+@EnableJpaRepositories(basePackages = "com.tenex.repository.tenant", entityManagerFactoryRef = "tenantEntityManagerFactory", transactionManagerRef = "tenantTransactionManager")
 public class TenantEntityManagerConfig {
 
     @Autowired
@@ -53,6 +48,15 @@ public class TenantEntityManagerConfig {
         properties.put("hibernate.show_sql", true);
         properties.put("hibernate.format_sql", true);
         properties.put("hibernate.hbm2ddl.auto", "none");
+
+        // Disable the default schema naming strategy
+        properties.put("hibernate.physical_naming_strategy",
+                "org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl");
+
+        // Enable schema-based multi-tenancy
+        properties.put("hibernate.multiTenancy", "SCHEMA");
+        properties.put("hibernate.multi_tenant_connection_provider", multiTenantConnectionProvider);
+        properties.put("hibernate.tenant_identifier_resolver", tenantIdentifierResolver);
 
         em.setJpaPropertyMap(properties);
         return em;
