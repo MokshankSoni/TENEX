@@ -44,7 +44,7 @@ public class Comment {
     private LocalDateTime updatedAt;
 
     // Relationships
-    @OneToMany(mappedBy = "comment")
+    @OneToMany(mappedBy = "comment" )
     private Set<Attachment> attachments = new HashSet<>();
 
     @PrePersist

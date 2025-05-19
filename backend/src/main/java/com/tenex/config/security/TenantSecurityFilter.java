@@ -50,26 +50,34 @@ public class TenantSecurityFilter extends OncePerRequestFilter {
             // tenant
             if (authentication != null && authentication.isAuthenticated()) {
                 String userTenantId = extractUserTenantId(authentication);
+                if (userTenantId == null) {
+                    logger.error("User tenant ID is null for authenticated user");
+                    handleUnauthorized(response, "Invalid user tenant information");
+                    return;
+                }
+
                 if (tenantId == null || !tenantId.equals(userTenantId)) {
+                    logger.warn("Tenant ID mismatch. User tenant: {}, Request tenant: {}", userTenantId, tenantId);
                     handleTenantMismatch(response, userTenantId);
                     return;
                 }
-            }
 
-            if (tenantId != null) {
-                if (tenantService.tenantExists(tenantId)) {
-                    TenantContext.setCurrentTenant(tenantId);
-                    logger.debug("Tenant context set to: {}", tenantId);
-                } else {
-                    logger.warn("Tenant does not exist: {}", tenantId);
-                    handleTenantNotFound(response);
-                    return;
-                }
+                // Set the tenant context before proceeding
+                TenantContext.setCurrentTenant(tenantId);
+                logger.debug("Tenant context set to: {} for user: {}", tenantId, authentication.getName());
+            } else {
+                logger.warn("No authentication found for request to: {}", request.getRequestURI());
+                handleUnauthorized(response, "Authentication required");
+                return;
             }
 
             filterChain.doFilter(request, response);
+        } catch (Exception e) {
+            logger.error("Error processing request", e);
+            handleError(response, e);
         } finally {
             TenantContext.clear();
+            logger.debug("Cleared tenant context");
         }
     }
 
@@ -82,12 +90,11 @@ public class TenantSecurityFilter extends OncePerRequestFilter {
     }
 
     private String extractUserTenantId(Authentication authentication) {
-        // Assuming the tenant ID is stored in the authentication principal
-        // You might need to adjust this based on how you store the tenant ID in your
-        // authentication
         if (authentication.getPrincipal() instanceof UserDetailsImpl) {
             return ((UserDetailsImpl) authentication.getPrincipal()).getTenantId();
         }
+        logger.warn("Authentication principal is not UserDetailsImpl: {}",
+                authentication.getPrincipal().getClass().getName());
         return null;
     }
 
@@ -109,13 +116,24 @@ public class TenantSecurityFilter extends OncePerRequestFilter {
         objectMapper.writeValue(response.getOutputStream(), errorResponse);
     }
 
-    private void handleTenantNotFound(HttpServletResponse response) throws IOException {
-        response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+    private void handleUnauthorized(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
         Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Tenant not found");
-        errorResponse.put("message", "The specified tenant does not exist");
+        errorResponse.put("error", "Unauthorized");
+        errorResponse.put("message", message);
+
+        objectMapper.writeValue(response.getOutputStream(), errorResponse);
+    }
+
+    private void handleError(HttpServletResponse response, Exception e) throws IOException {
+        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", "Internal Server Error");
+        errorResponse.put("message", e.getMessage());
 
         objectMapper.writeValue(response.getOutputStream(), errorResponse);
     }

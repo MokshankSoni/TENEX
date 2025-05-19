@@ -27,7 +27,7 @@ public class ProjectService {
      */
     public List<Project> findAllProjects() {
         String tenantId = TenantContext.getCurrentTenant();
-        return projectRepository.findByTenantId(tenantId);
+        return projectRepository.findAllWithTasksByTenantId(tenantId);
     }
 
     /**
@@ -38,7 +38,7 @@ public class ProjectService {
      */
     public Optional<Project> findProjectById(Long id) {
         String tenantId = TenantContext.getCurrentTenant();
-        Optional<Project> project = projectRepository.findById(id);
+        Optional<Project> project = projectRepository.findByIdWithManual(id);
 
         // Ensure the project belongs to the current tenant
         if (project.isPresent() && !project.get().getTenantId().equals(tenantId)) {
@@ -72,7 +72,7 @@ public class ProjectService {
     @Transactional("tenantTransactionManager")
     public Optional<Project> updateProject(Long id, Project projectDetails) {
         String tenantId = TenantContext.getCurrentTenant();
-        Optional<Project> existingProject = projectRepository.findById(id);
+        Optional<Project> existingProject = projectRepository.findByIdWithManual(id);
 
         if (existingProject.isPresent() && existingProject.get().getTenantId().equals(tenantId)) {
             Project project = existingProject.get();
@@ -101,7 +101,7 @@ public class ProjectService {
     @Transactional("tenantTransactionManager")
     public boolean deleteProject(Long id) {
         String tenantId = TenantContext.getCurrentTenant();
-        Optional<Project> project = projectRepository.findById(id);
+        Optional<Project> project = projectRepository.findByIdWithManual(id);
 
         if (project.isPresent() && project.get().getTenantId().equals(tenantId)) {
             projectRepository.deleteById(id);

@@ -60,7 +60,7 @@ public class ProjectController {
     /**
      * Update an existing project for the current tenant
      *
-     * @param id Project ID
+     * @param id             Project ID
      * @param projectDetails Updated project details
      * @return Updated project if found and belongs to tenant, 404 otherwise
      */
