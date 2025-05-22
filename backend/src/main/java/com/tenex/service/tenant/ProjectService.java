@@ -1,7 +1,8 @@
 package com.tenex.service.tenant;
 
 import com.tenex.config.multitenancy.TenantContext;
-import com.tenex.entity.tenant.Project;
+import com.tenex.dto.tenant.*;
+import com.tenex.entity.tenant.*;
 import com.tenex.repository.tenant.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -9,25 +10,25 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ProjectService {
 
-    private final ProjectRepository projectRepository;
-
     @Autowired
-    public ProjectService(ProjectRepository projectRepository) {
-        this.projectRepository = projectRepository;
-    }
+    private ProjectRepository projectRepository;
 
     /**
      * Find all projects for the current tenant
      *
      * @return List of projects for the current tenant
      */
-    public List<Project> findAllProjects() {
+    @Transactional(value = "tenantTransactionManager", readOnly = true)
+    public List<ProjectDTO> findAllProjects() {
         String tenantId = TenantContext.getCurrentTenant();
-        return projectRepository.findAllWithTasksByTenantId(tenantId);
+        return projectRepository.findAllWithTasksByTenantId(tenantId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -36,60 +37,40 @@ public class ProjectService {
      * @param id Project ID
      * @return Project if found, empty Optional otherwise
      */
-    public Optional<Project> findProjectById(Long id) {
-        String tenantId = TenantContext.getCurrentTenant();
-        Optional<Project> project = projectRepository.findByIdWithManual(id);
-
-        // Ensure the project belongs to the current tenant
-        if (project.isPresent() && !project.get().getTenantId().equals(tenantId)) {
-            return Optional.empty();
-        }
-
-        return project;
+    @Transactional(value = "tenantTransactionManager", readOnly = true)
+    public Optional<ProjectDTO> findProjectById(Long id) {
+        return projectRepository.findById(id)
+                .map(this::convertToDTO);
     }
 
     /**
      * Create a new project for the current tenant
      *
-     * @param project Project to create
+     * @param projectDTO Project to create
      * @return Created project
      */
-    @Transactional("tenantTransactionManager")
-    public Project createProject(Project project) {
-        String tenantId = TenantContext.getCurrentTenant();
-        project.setTenantId(tenantId);
-        return projectRepository.save(project);
+    @Transactional(value = "tenantTransactionManager")
+    public ProjectDTO createProject(ProjectDTO projectDTO) {
+        Project project = new Project();
+        updateProjectFromDTO(project, projectDTO);
+        return convertToDTO(projectRepository.save(project));
     }
 
     /**
      * Update an existing project for the current tenant
      *
-     * @param id             Project ID
-     * @param projectDetails Updated project details
+     * @param id         Project ID
+     * @param projectDTO Updated project details
      * @return Updated project if found and belongs to tenant, empty Optional
      *         otherwise
      */
-    @Transactional("tenantTransactionManager")
-    public Optional<Project> updateProject(Long id, Project projectDetails) {
-        String tenantId = TenantContext.getCurrentTenant();
-        Optional<Project> existingProject = projectRepository.findByIdWithManual(id);
-
-        if (existingProject.isPresent() && existingProject.get().getTenantId().equals(tenantId)) {
-            Project project = existingProject.get();
-
-            // Update project fields
-            project.setName(projectDetails.getName());
-            project.setDescription(projectDetails.getDescription());
-            project.setStartDate(projectDetails.getStartDate());
-            project.setEndDate(projectDetails.getEndDate());
-            project.setStatus(projectDetails.getStatus());
-
-            // Don't update tenant ID, created at, or ID
-
-            return Optional.of(projectRepository.save(project));
-        }
-
-        return Optional.empty();
+    @Transactional(value = "tenantTransactionManager")
+    public Optional<ProjectDTO> updateProject(Long id, ProjectDTO projectDTO) {
+        return projectRepository.findById(id)
+                .map(project -> {
+                    updateProjectFromDTO(project, projectDTO);
+                    return convertToDTO(projectRepository.save(project));
+                });
     }
 
     /**
@@ -117,9 +98,12 @@ public class ProjectService {
      * @param status Project status
      * @return List of projects with the specified status
      */
-    public List<Project> findProjectsByStatus(String status) {
+    @Transactional(value = "tenantTransactionManager", readOnly = true)
+    public List<ProjectDTO> findProjectsByStatus(String status) {
         String tenantId = TenantContext.getCurrentTenant();
-        return projectRepository.findByTenantIdAndStatus(tenantId, status);
+        return projectRepository.findByTenantIdAndStatus(tenantId, status).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -128,8 +112,117 @@ public class ProjectService {
      * @param name Project name (partial match, case insensitive)
      * @return List of matching projects
      */
-    public List<Project> searchProjectsByName(String name) {
+    @Transactional(value = "tenantTransactionManager", readOnly = true)
+    public List<ProjectDTO> searchProjectsByName(String name) {
         String tenantId = TenantContext.getCurrentTenant();
-        return projectRepository.findByNameContainingIgnoreCaseAndTenantId(name, tenantId);
+        return projectRepository.findByNameContainingIgnoreCaseAndTenantId(name, tenantId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    private void updateProjectFromDTO(Project project, ProjectDTO dto) {
+        project.setName(dto.getName());
+        project.setDescription(dto.getDescription());
+        project.setStatus(dto.getStatus());
+        project.setStartDate(dto.getStartDate());
+        project.setEndDate(dto.getEndDate());
+    }
+
+    private ProjectDTO convertToDTO(Project project) {
+        List<TaskDTO> taskDTOs = project.getTasks().stream()
+                .map(this::convertToTaskDTO)
+                .collect(Collectors.toList());
+
+        List<ProjectMilestoneDTO> milestoneDTOs = project.getMilestones().stream()
+                .map(milestone -> new ProjectMilestoneDTO(
+                        milestone.getId(),
+                        milestone.getProject().getId(),
+                        milestone.getTitle(),
+                        milestone.getDescription(),
+                        milestone.getDueDate(),
+                        milestone.getCompleted()))
+                .collect(Collectors.toList());
+
+        List<UserProjectAssignmentDTO> assignmentDTOs = project.getUserAssignments().stream()
+                .map(assignment -> new UserProjectAssignmentDTO(
+                        assignment.getUserId(),
+                        assignment.getProject().getId(),
+                        assignment.getRoleInProject(),
+                        assignment.getAssignedAt()))
+                .collect(Collectors.toList());
+
+        return new ProjectDTO(
+                project.getId(),
+                project.getName(),
+                project.getDescription(),
+                project.getStatus(),
+                project.getStartDate(),
+                project.getEndDate(),
+                project.getCreatedAt(),
+                project.getUpdatedAt(),
+                taskDTOs,
+                milestoneDTOs,
+                assignmentDTOs);
+    }
+
+    private TaskDTO convertToTaskDTO(Task task) {
+        List<CommentDTO> commentDTOs = task.getComments().stream()
+                .map(comment -> new CommentDTO(
+                        comment.getId(),
+                        comment.getContent(),
+                        comment.getUserId(),
+                        comment.getTask().getId(),
+                        comment.getCreatedAt(),
+                        comment.getUpdatedAt()))
+                .collect(Collectors.toList());
+
+        List<TaskStatusHistoryDTO> statusHistoryDTOs = task.getStatusHistory().stream()
+                .map(history -> new TaskStatusHistoryDTO(
+                        history.getId(),
+                        history.getTask().getId(),
+                        history.getOldStatus(),
+                        history.getNewStatus(),
+                        history.getChangedBy(),
+                        history.getChangedAt()))
+                .collect(Collectors.toList());
+
+        List<TaskChecklistDTO> checklistDTOs = task.getChecklists().stream()
+                .map(checklist -> new TaskChecklistDTO(
+                        checklist.getId(),
+                        checklist.getTask().getId(),
+                        checklist.getItem(),
+                        checklist.getCompleted()))
+                .collect(Collectors.toList());
+
+        List<AttachmentDTO> attachmentDTOs = task.getAttachments().stream()
+                .map(attachment -> new AttachmentDTO(
+                        attachment.getId(),
+                        attachment.getTask().getId(),
+                        attachment.getComment() != null ? attachment.getComment().getId() : null,
+                        attachment.getFileName(),
+                        attachment.getFileType(),
+                        attachment.getFileSize(),
+                        attachment.getFileUrl(),
+                        attachment.getUploadedBy(),
+                        attachment.getUploadedAt()))
+                .collect(Collectors.toList());
+
+        return new TaskDTO(
+                task.getId(),
+                task.getProject().getId(),
+                task.getTitle(),
+                task.getDescription(),
+                task.getStatus(),
+                task.getPriority(),
+                task.getAssignedTo(),
+                task.getCreatedBy(),
+                task.getEstimatedTime(),
+                task.getDueDate(),
+                task.getCreatedAt(),
+                task.getUpdatedAt(),
+                commentDTOs,
+                statusHistoryDTOs,
+                checklistDTOs,
+                attachmentDTOs);
     }
 }

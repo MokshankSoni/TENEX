@@ -1,6 +1,6 @@
 package com.tenex.controller.tenant;
 
-import com.tenex.entity.tenant.Project;
+import com.tenex.dto.tenant.ProjectDTO;
 import com.tenex.service.tenant.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -8,18 +8,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/projects")
 public class ProjectController {
 
-    private final ProjectService projectService;
-
     @Autowired
-    public ProjectController(ProjectService projectService) {
-        this.projectService = projectService;
-    }
+    private ProjectService projectService;
 
     /**
      * Get all projects for the current tenant
@@ -27,9 +22,8 @@ public class ProjectController {
      * @return List of projects
      */
     @GetMapping
-    public ResponseEntity<List<Project>> getAllProjects() {
-        List<Project> projects = projectService.findAllProjects();
-        return new ResponseEntity<>(projects, HttpStatus.OK);
+    public ResponseEntity<List<ProjectDTO>> getAllProjects() {
+        return ResponseEntity.ok(projectService.findAllProjects());
     }
 
     /**
@@ -39,9 +33,9 @@ public class ProjectController {
      * @return Project if found and belongs to tenant, 404 otherwise
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Project> getProjectById(@PathVariable Long id) {
-        Optional<Project> project = projectService.findProjectById(id);
-        return project.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
+    public ResponseEntity<ProjectDTO> getProjectById(@PathVariable Long id) {
+        return projectService.findProjectById(id)
+                .map(ResponseEntity::ok)
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
@@ -52,9 +46,8 @@ public class ProjectController {
      * @return Created project with 201 status
      */
     @PostMapping
-    public ResponseEntity<Project> createProject(@RequestBody Project project) {
-        Project createdProject = projectService.createProject(project);
-        return new ResponseEntity<>(createdProject, HttpStatus.CREATED);
+    public ResponseEntity<ProjectDTO> createProject(@RequestBody ProjectDTO project) {
+        return new ResponseEntity<>(projectService.createProject(project), HttpStatus.CREATED);
     }
 
     /**
@@ -65,9 +58,9 @@ public class ProjectController {
      * @return Updated project if found and belongs to tenant, 404 otherwise
      */
     @PutMapping("/{id}")
-    public ResponseEntity<Project> updateProject(@PathVariable Long id, @RequestBody Project projectDetails) {
-        Optional<Project> updatedProject = projectService.updateProject(id, projectDetails);
-        return updatedProject.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
+    public ResponseEntity<ProjectDTO> updateProject(@PathVariable Long id, @RequestBody ProjectDTO projectDetails) {
+        return projectService.updateProject(id, projectDetails)
+                .map(ResponseEntity::ok)
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
@@ -79,8 +72,8 @@ public class ProjectController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProject(@PathVariable Long id) {
-        boolean deleted = projectService.deleteProject(id);
-        return deleted ? new ResponseEntity<>(HttpStatus.NO_CONTENT)
+        return projectService.deleteProject(id)
+                ? new ResponseEntity<>(HttpStatus.NO_CONTENT)
                 : new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
@@ -91,9 +84,8 @@ public class ProjectController {
      * @return List of projects with the specified status
      */
     @GetMapping("/status/{status}")
-    public ResponseEntity<List<Project>> getProjectsByStatus(@PathVariable String status) {
-        List<Project> projects = projectService.findProjectsByStatus(status);
-        return new ResponseEntity<>(projects, HttpStatus.OK);
+    public ResponseEntity<List<ProjectDTO>> getProjectsByStatus(@PathVariable String status) {
+        return ResponseEntity.ok(projectService.findProjectsByStatus(status));
     }
 
     /**
@@ -103,8 +95,7 @@ public class ProjectController {
      * @return List of matching projects
      */
     @GetMapping("/search")
-    public ResponseEntity<List<Project>> searchProjectsByName(@RequestParam String name) {
-        List<Project> projects = projectService.searchProjectsByName(name);
-        return new ResponseEntity<>(projects, HttpStatus.OK);
+    public ResponseEntity<List<ProjectDTO>> searchProjectsByName(@RequestParam String name) {
+        return ResponseEntity.ok(projectService.searchProjectsByName(name));
     }
 }

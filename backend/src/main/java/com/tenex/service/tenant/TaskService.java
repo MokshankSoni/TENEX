@@ -1,6 +1,7 @@
 package com.tenex.service.tenant;
 
 import com.tenex.config.multitenancy.TenantContext;
+import com.tenex.dto.tenant.*;
 import com.tenex.entity.tenant.Project;
 import com.tenex.entity.tenant.Task;
 import com.tenex.repository.tenant.ProjectRepository;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class TaskService {
@@ -30,106 +32,193 @@ public class TaskService {
     }
 
     @Transactional(value = "tenantTransactionManager", readOnly = true)
-    public List<Task> getAllTasks() {
+    public List<TaskDTO> getAllTasks() {
         logger.info("Fetching all tasks for tenant: {}", TenantContext.getCurrentTenant());
-        return taskRepository.findAllWithProject();
+        return taskRepository.findAllWithProject().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     @Transactional(value = "tenantTransactionManager", readOnly = true)
-    public Optional<Task> getTaskById(Long id) {
+    public Optional<TaskDTO> getTaskById(Long id) {
         logger.info("Fetching task with ID: {} for tenant: {}", id, TenantContext.getCurrentTenant());
-        return taskRepository.findById(id);
+        return taskRepository.findById(id)
+                .map(this::convertToDTO);
     }
 
     @Transactional("tenantTransactionManager")
-    public Task createTask(Task task) {
+    public TaskDTO createTask(TaskDTO taskDTO) {
         logger.info("Creating new task for project ID: {} in tenant: {}",
-                task.getProject().getId(), TenantContext.getCurrentTenant());
+                taskDTO.getProjectId(), TenantContext.getCurrentTenant());
 
         // Verify project exists in the current tenant context
-        Project project = projectRepository.findByIdWithManual(task.getProject().getId())
+        Project project = projectRepository.findByIdWithManual(taskDTO.getProjectId())
                 .orElseThrow(
-                        () -> new IllegalArgumentException("Project not found with ID: " + task.getProject().getId()));
+                        () -> new IllegalArgumentException("Project not found with ID: " + taskDTO.getProjectId()));
 
+        Task task = new Task();
+        updateTaskFromDTO(task, taskDTO);
         task.setProject(project);
-        return taskRepository.save(task);
+
+        return convertToDTO(taskRepository.save(task));
     }
 
     @Transactional("tenantTransactionManager")
-    public Task updateTask(Long id, Task taskDetails) {
+    public Optional<TaskDTO> updateTask(Long id, TaskDTO taskDTO) {
         logger.info("Updating task with ID: {} for tenant: {}", id, TenantContext.getCurrentTenant());
 
-        Task existingTask = taskRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Task not found with ID: " + id));
+        return taskRepository.findById(id)
+                .map(existingTask -> {
+                    updateTaskFromDTO(existingTask, taskDTO);
 
-        // Update task fields from the request
-        existingTask.setTitle(taskDetails.getTitle());
-        existingTask.setDescription(taskDetails.getDescription());
-        existingTask.setStatus(taskDetails.getStatus());
-        existingTask.setPriority(taskDetails.getPriority());
-        existingTask.setAssignedTo(taskDetails.getAssignedTo());
-        existingTask.setEstimatedTime(taskDetails.getEstimatedTime());
-        existingTask.setDueDate(taskDetails.getDueDate());
+                    // If project is being updated, verify the new project exists
+                    if (taskDTO.getProjectId() != null &&
+                            !existingTask.getProject().getId().equals(taskDTO.getProjectId())) {
+                        Project newProject = projectRepository.findByIdWithManual(taskDTO.getProjectId())
+                                .orElseThrow(() -> new IllegalArgumentException(
+                                        "Project not found with ID: " + taskDTO.getProjectId()));
+                        existingTask.setProject(newProject);
+                    }
 
-        // If project is being updated, verify the new project exists
-        if (taskDetails.getProject() != null &&
-                !existingTask.getProject().getId().equals(taskDetails.getProject().getId())) {
-            Project newProject = projectRepository.findByIdWithManual(taskDetails.getProject().getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Project not found with ID: " +
-                            taskDetails.getProject().getId()));
-            existingTask.setProject(newProject);
-        }
-
-        return taskRepository.save(existingTask);
+                    return convertToDTO(taskRepository.save(existingTask));
+                });
     }
 
     @Transactional("tenantTransactionManager")
-    public void deleteTask(Long id) {
+    public boolean deleteTask(Long id) {
         logger.info("Deleting task with ID: {} for tenant: {}", id, TenantContext.getCurrentTenant());
-        Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Task not found with ID: " + id));
-        taskRepository.delete(task);
+        return taskRepository.findById(id)
+                .map(task -> {
+                    taskRepository.delete(task);
+                    return true;
+                })
+                .orElse(false);
     }
 
     @Transactional(value = "tenantTransactionManager", readOnly = true)
-    public List<Task> getTasksByProject(Long projectId) {
+    public List<TaskDTO> getTasksByProject(Long projectId) {
         logger.info("Fetching tasks for project ID: {} in tenant: {}", projectId, TenantContext.getCurrentTenant());
-        return taskRepository.findByProjectId(projectId);
+        return taskRepository.findByProjectId(projectId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     @Transactional(value = "tenantTransactionManager", readOnly = true)
-    public List<Task> getTasksByAssignee(Long userId) {
+    public List<TaskDTO> getTasksByAssignee(Long userId) {
         logger.info("Fetching tasks assigned to user ID: {} in tenant: {}", userId, TenantContext.getCurrentTenant());
-        return taskRepository.findByAssignedTo(userId);
+        return taskRepository.findByAssignedTo(userId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     @Transactional(value = "tenantTransactionManager", readOnly = true)
-    public List<Task> getTasksByStatus(String status) {
+    public List<TaskDTO> getTasksByStatus(String status) {
         logger.info("Fetching tasks with status: {} in tenant: {}", status, TenantContext.getCurrentTenant());
-        return taskRepository.findByStatus(status);
+        return taskRepository.findByStatus(status).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     @Transactional(value = "tenantTransactionManager", readOnly = true)
-    public List<Task> getTasksByDueDate(LocalDate dueDate) {
+    public List<TaskDTO> getTasksByDueDate(LocalDate dueDate) {
         logger.info("Fetching tasks due before: {} in tenant: {}", dueDate, TenantContext.getCurrentTenant());
-        return taskRepository.findByDueDateBefore(dueDate);
+        return taskRepository.findByDueDateBefore(dueDate).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     @Transactional(value = "tenantTransactionManager", readOnly = true)
-    public List<Task> searchTasksByTitle(String title) {
+    public List<TaskDTO> searchTasksByTitle(String title) {
         logger.info("Searching tasks with title containing: {} in tenant: {}", title, TenantContext.getCurrentTenant());
-        return taskRepository.findByTitleContainingIgnoreCase(title);
+        return taskRepository.findByTitleContainingIgnoreCase(title).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     @Transactional(value = "tenantTransactionManager", readOnly = true)
-    public List<Task> getTasksByCreator(Long userId) {
+    public List<TaskDTO> getTasksByCreator(Long userId) {
         logger.info("Fetching tasks created by user ID: {} in tenant: {}", userId, TenantContext.getCurrentTenant());
-        return taskRepository.findByCreatedBy(userId);
+        return taskRepository.findByCreatedBy(userId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     @Transactional(value = "tenantTransactionManager", readOnly = true)
-    public List<Task> getTasksByPriority(String priority) {
+    public List<TaskDTO> getTasksByPriority(String priority) {
         logger.info("Fetching tasks with priority: {} in tenant: {}", priority, TenantContext.getCurrentTenant());
-        return taskRepository.findByPriority(priority);
+        return taskRepository.findByPriority(priority).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    private void updateTaskFromDTO(Task task, TaskDTO dto) {
+        task.setTitle(dto.getTitle());
+        task.setDescription(dto.getDescription());
+        task.setStatus(dto.getStatus());
+        task.setPriority(dto.getPriority());
+        task.setAssignedTo(dto.getAssignedTo());
+        task.setEstimatedTime(dto.getEstimatedTime());
+        task.setDueDate(dto.getDueDate());
+    }
+
+    private TaskDTO convertToDTO(Task task) {
+        List<CommentDTO> commentDTOs = task.getComments().stream()
+                .map(comment -> new CommentDTO(
+                        comment.getId(),
+                        comment.getContent(),
+                        comment.getUserId(),
+                        comment.getTask().getId(),
+                        comment.getCreatedAt(),
+                        comment.getUpdatedAt()))
+                .collect(Collectors.toList());
+
+        List<TaskStatusHistoryDTO> statusHistoryDTOs = task.getStatusHistory().stream()
+                .map(history -> new TaskStatusHistoryDTO(
+                        history.getId(),
+                        history.getTask().getId(),
+                        history.getOldStatus(),
+                        history.getNewStatus(),
+                        history.getChangedBy(),
+                        history.getChangedAt()))
+                .collect(Collectors.toList());
+
+        List<TaskChecklistDTO> checklistDTOs = task.getChecklists().stream()
+                .map(checklist -> new TaskChecklistDTO(
+                        checklist.getId(),
+                        checklist.getTask().getId(),
+                        checklist.getItem(),
+                        checklist.getCompleted()))
+                .collect(Collectors.toList());
+
+        List<AttachmentDTO> attachmentDTOs = task.getAttachments().stream()
+                .map(attachment -> new AttachmentDTO(
+                        attachment.getId(),
+                        attachment.getTask().getId(),
+                        attachment.getComment() != null ? attachment.getComment().getId() : null,
+                        attachment.getFileName(),
+                        attachment.getFileType(),
+                        attachment.getFileSize(),
+                        attachment.getFileUrl(),
+                        attachment.getUploadedBy(),
+                        attachment.getUploadedAt()))
+                .collect(Collectors.toList());
+
+        return new TaskDTO(
+                task.getId(),
+                task.getProject().getId(),
+                task.getTitle(),
+                task.getDescription(),
+                task.getStatus(),
+                task.getPriority(),
+                task.getAssignedTo(),
+                task.getCreatedBy(),
+                task.getEstimatedTime(),
+                task.getDueDate(),
+                task.getCreatedAt(),
+                task.getUpdatedAt(),
+                commentDTOs,
+                statusHistoryDTOs,
+                checklistDTOs,
+                attachmentDTOs);
     }
 }

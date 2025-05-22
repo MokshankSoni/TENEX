@@ -40,8 +40,6 @@ public class TenantFilter extends OncePerRequestFilter {
         if (tenantId != null && !tenantId.isEmpty()) {
             logger.debug("Setting tenant context to: {}", tenantId);
 
-
-
             TenantContext.setCurrentTenant(tenantId);
         } else {
             logger.debug("No tenant ID found, using public schema");
