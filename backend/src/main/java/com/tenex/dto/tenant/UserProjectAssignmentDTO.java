@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserProjectAssignmentDTO {
-    private Long userId;
+    private String username;
     private Long projectId;
     private String roleInProject;
     private LocalDateTime assignedAt;

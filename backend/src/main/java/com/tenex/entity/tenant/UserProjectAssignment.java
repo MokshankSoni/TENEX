@@ -2,7 +2,6 @@ package com.tenex.entity.tenant;
 
 import java.time.LocalDateTime;
 
-
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 
