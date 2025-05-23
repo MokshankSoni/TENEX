@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -81,5 +82,15 @@ public class TaskController {
     @GetMapping("/priority/{priority}")
     public ResponseEntity<List<TaskDTO>> getTasksByPriority(@PathVariable String priority) {
         return ResponseEntity.ok(taskService.getTasksByPriority(priority));
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<TaskDTO> updateTaskStatus(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request) {
+        String newStatus = request.get("status");
+        return taskService.updateTaskStatus(id, newStatus)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 }

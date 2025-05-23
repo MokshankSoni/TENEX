@@ -7,10 +7,13 @@ import com.tenex.entity.tenant.Task;
 import com.tenex.enums.ActivityAction;
 import com.tenex.repository.tenant.ProjectRepository;
 import com.tenex.repository.tenant.TaskRepository;
+import com.tenex.security.services.UserDetailsImpl;
 import com.tenex.util.ActivityLogUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,14 +30,17 @@ public class TaskService {
         private final TaskRepository taskRepository;
         private final ProjectRepository projectRepository;
         private final ActivityLogUtil activityLogUtil;
+        private final TaskStatusHistoryService taskStatusHistoryService;
 
         @Autowired
         public TaskService(TaskRepository taskRepository,
                         ProjectRepository projectRepository,
-                        ActivityLogUtil activityLogUtil) {
+                        ActivityLogUtil activityLogUtil,
+                        TaskStatusHistoryService taskStatusHistoryService) {
                 this.taskRepository = taskRepository;
                 this.projectRepository = projectRepository;
                 this.activityLogUtil = activityLogUtil;
+                this.taskStatusHistoryService = taskStatusHistoryService;
         }
 
         @Transactional(value = "tenantTransactionManager", readOnly = true)
@@ -176,6 +182,46 @@ public class TaskService {
                 return taskRepository.findByPriority(priority).stream()
                                 .map(this::convertToDTO)
                                 .collect(Collectors.toList());
+        }
+
+        @Transactional("tenantTransactionManager")
+        public Optional<TaskDTO> updateTaskStatus(Long id, String newStatus) {
+                logger.info("Updating status for task ID: {} to {} in tenant: {}",
+                                id, newStatus, TenantContext.getCurrentTenant());
+
+                return taskRepository.findById(id)
+                                .map(task -> {
+                                        String oldStatus = task.getStatus();
+                                        task.setStatus(newStatus);
+                                        Task savedTask = taskRepository.save(task);
+
+                                        // Get current user from security context
+                                        Authentication authentication = SecurityContextHolder.getContext()
+                                                        .getAuthentication();
+                                        if (authentication != null
+                                                        && authentication.getPrincipal() instanceof UserDetailsImpl) {
+                                                UserDetailsImpl userDetails = (UserDetailsImpl) authentication
+                                                                .getPrincipal();
+                                                Long userId = userDetails.getId();
+
+                                                // Create task status history entry
+                                                TaskStatusHistoryDTO historyDTO = new TaskStatusHistoryDTO(
+                                                                null, // ID will be generated
+                                                                savedTask.getId(),
+                                                                oldStatus,
+                                                                newStatus,
+                                                                userId,
+                                                                null // changedAt will be set automatically
+                                                );
+                                                taskStatusHistoryService.createStatusHistory(historyDTO);
+                                        }
+
+                                        // Log activity
+                                        activityLogUtil.logActivity(ActivityAction.UPDATE_TASK, "Task",
+                                                        savedTask.getId());
+
+                                        return convertToDTO(savedTask);
+                                });
         }
 
         private void updateTaskFromDTO(Task task, TaskDTO dto) {
