@@ -3,9 +3,11 @@ package com.tenex.service.tenant;
 import com.tenex.dto.tenant.CommentDTO;
 import com.tenex.entity.tenant.Comment;
 import com.tenex.entity.tenant.Task;
+import com.tenex.enums.ActivityAction;
 import com.tenex.repository.tenant.CommentRepository;
 import com.tenex.repository.tenant.TaskRepository;
 import com.tenex.security.services.UserDetailsImpl;
+import com.tenex.util.ActivityLogUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +29,9 @@ public class CommentService {
 
     @Autowired
     private TaskRepository taskRepository;
+
+    @Autowired
+    private ActivityLogUtil activityLogUtil;
 
     @Transactional(value = "tenantTransactionManager", readOnly = true)
     public List<CommentDTO> getAllComments() {
@@ -92,6 +97,10 @@ public class CommentService {
         try {
             Comment savedComment = commentRepository.save(comment);
             logger.info("Successfully created comment with ID: {}", savedComment.getId());
+
+            // Log activity
+            activityLogUtil.logActivity(ActivityAction.CREATE_COMMENT, "Comment", savedComment.getId());
+
             return convertToDTO(savedComment);
         } catch (Exception e) {
             logger.error("Failed to save comment: {}", e.getMessage(), e);
@@ -106,11 +115,21 @@ public class CommentService {
 
         comment.setContent(content);
         Comment updatedComment = commentRepository.save(comment);
+
+        // Log activity
+        activityLogUtil.logActivity(ActivityAction.UPDATE_COMMENT, "Comment", updatedComment.getId());
+
         return convertToDTO(updatedComment);
     }
 
     @Transactional(value = "tenantTransactionManager")
     public void deleteComment(Long commentId) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new RuntimeException("Comment not found"));
+
+        // Log activity before deletion
+        activityLogUtil.logActivity(ActivityAction.DELETE_COMMENT, "Comment", commentId);
+
         commentRepository.deleteById(commentId);
     }
 

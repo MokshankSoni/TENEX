@@ -4,10 +4,12 @@ import com.tenex.dto.tenant.UserProjectAssignmentDTO;
 import com.tenex.entity.tenant.Project;
 import com.tenex.entity.tenant.UserProjectAssignment;
 import com.tenex.entity.tenant.UserProjectAssignmentId;
+import com.tenex.enums.ActivityAction;
 import com.tenex.repository.master.UserTenantMappingRepository;
 import com.tenex.repository.tenant.ProjectRepository;
 import com.tenex.repository.tenant.UserProjectAssignmentRepository;
 import com.tenex.config.multitenancy.TenantContext;
+import com.tenex.util.ActivityLogUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +28,9 @@ public class UserProjectAssignmentService {
 
         @Autowired
         private UserTenantMappingRepository userTenantMappingRepository;
+
+        @Autowired
+        private ActivityLogUtil activityLogUtil;
 
         @Transactional(value = "tenantTransactionManager")
         public UserProjectAssignmentDTO createAssignment(UserProjectAssignmentDTO assignmentDTO) {
@@ -46,6 +51,11 @@ public class UserProjectAssignmentService {
                 assignment.setRoleInProject(assignmentDTO.getRoleInProject());
 
                 UserProjectAssignment savedAssignment = assignmentRepository.save(assignment);
+
+                // Log activity
+                activityLogUtil.logActivity(ActivityAction.ASSIGN_USER, "UserProjectAssignment",
+                                savedAssignment.getProject().getId());
+
                 return convertToDTO(savedAssignment);
         }
 
@@ -68,6 +78,11 @@ public class UserProjectAssignmentService {
 
                 assignment.setRoleInProject(assignmentDTO.getRoleInProject());
                 UserProjectAssignment updatedAssignment = assignmentRepository.save(assignment);
+
+                // Log activity
+                activityLogUtil.logActivity(ActivityAction.UPDATE_USER_ROLE, "UserProjectAssignment",
+                                updatedAssignment.getProject().getId());
+
                 return convertToDTO(updatedAssignment);
         }
 
@@ -85,6 +100,9 @@ public class UserProjectAssignmentService {
                                 .getId();
 
                 assignmentRepository.deleteByUserIdAndProject(userId, project);
+
+                // Log activity
+                activityLogUtil.logActivity(ActivityAction.UNASSIGN_USER, "UserProjectAssignment", projectId);
         }
 
         @Transactional(value = "tenantTransactionManager", readOnly = true)

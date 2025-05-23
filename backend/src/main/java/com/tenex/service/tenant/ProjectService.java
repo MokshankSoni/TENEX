@@ -3,8 +3,10 @@ package com.tenex.service.tenant;
 import com.tenex.config.multitenancy.TenantContext;
 import com.tenex.dto.tenant.*;
 import com.tenex.entity.tenant.*;
+import com.tenex.enums.ActivityAction;
 import com.tenex.repository.master.UserTenantMappingRepository;
 import com.tenex.repository.tenant.ProjectRepository;
+import com.tenex.util.ActivityLogUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +23,9 @@ public class ProjectService {
 
         @Autowired
         private UserTenantMappingRepository userTenantMappingRepository;
+
+        @Autowired
+        private ActivityLogUtil activityLogUtil;
 
         /**
          * Find all projects for the current tenant
@@ -57,7 +62,12 @@ public class ProjectService {
         public ProjectDTO createProject(ProjectDTO projectDTO) {
                 Project project = new Project();
                 updateProjectFromDTO(project, projectDTO);
-                return convertToDTO(projectRepository.save(project));
+                Project savedProject = projectRepository.save(project);
+
+                // Log activity
+                activityLogUtil.logActivity(ActivityAction.CREATE_PROJECT, "Project", savedProject.getId());
+
+                return convertToDTO(savedProject);
         }
 
         /**
@@ -73,7 +83,13 @@ public class ProjectService {
                 return projectRepository.findByIdWithManual(id)
                                 .map(project -> {
                                         updateProjectFromDTO(project, projectDTO);
-                                        return convertToDTO(projectRepository.save(project));
+                                        Project savedProject = projectRepository.save(project);
+
+                                        // Log activity
+                                        activityLogUtil.logActivity(ActivityAction.UPDATE_PROJECT, "Project",
+                                                        savedProject.getId());
+
+                                        return convertToDTO(savedProject);
                                 });
         }
 
@@ -90,6 +106,10 @@ public class ProjectService {
 
                 if (project.isPresent() && project.get().getTenantId().equals(tenantId)) {
                         projectRepository.deleteById(id);
+
+                        // Log activity
+                        activityLogUtil.logActivity(ActivityAction.DELETE_PROJECT, "Project", id);
+
                         return true;
                 }
 
