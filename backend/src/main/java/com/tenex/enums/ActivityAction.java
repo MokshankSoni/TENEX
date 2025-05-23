@@ -21,5 +21,9 @@ public enum ActivityAction {
     // User-Project assignment actions
     ASSIGN_USER,
     UNASSIGN_USER,
-    UPDATE_USER_ROLE
+    UPDATE_USER_ROLE,
+
+    // Task Status History actions
+    CREATE_TASK_STATUS_HISTORY,
+    DELETE_TASK_STATUS_HISTORY
 }
