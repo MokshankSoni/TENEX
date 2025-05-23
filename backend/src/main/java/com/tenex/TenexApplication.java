@@ -32,5 +32,4 @@ public class TenexApplication {
 			tenantService.createTenant("master","System Administrator");
 		}
 	}
-
 }

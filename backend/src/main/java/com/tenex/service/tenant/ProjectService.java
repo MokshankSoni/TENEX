@@ -133,9 +133,33 @@ public class ProjectService {
         }
 
         private ProjectDTO convertToDTO(Project project) {
+                System.out.println("Converting project: " + project.getId() + " to DTO");
+                System.out.println("Project details - Name: " + project.getName() + ", Status: " + project.getStatus());
+
+                // Debug tasks
+                System.out.println("Tasks collection: " + (project.getTasks() == null ? "null" : "not null"));
+                if (project.getTasks() != null) {
+                        System.out.println("Tasks size: " + project.getTasks().size());
+                        project.getTasks().forEach(task -> System.out
+                                        .println("Task - ID: " + task.getId() + ", Title: " + task.getTitle()));
+                }
+
+                // Debug assignments
+                System.out.println("Assignments collection: "
+                                + (project.getUserAssignments() == null ? "null" : "not null"));
+                if (project.getUserAssignments() != null) {
+                        System.out.println("Assignments size: " + project.getUserAssignments().size());
+                        project.getUserAssignments()
+                                        .forEach(assignment -> System.out.println("Assignment - UserId: "
+                                                        + assignment.getUserId() +
+                                                        ", ProjectId: " + assignment.getProject().getId() +
+                                                        ", Role: " + assignment.getRoleInProject()));
+                }
+
                 List<TaskDTO> taskDTOs = project.getTasks().stream()
                                 .map(this::convertToTaskDTO)
                                 .collect(Collectors.toList());
+                System.out.println("Converted " + taskDTOs.size() + " tasks");
 
                 List<ProjectMilestoneDTO> milestoneDTOs = project.getMilestones().stream()
                                 .map(milestone -> new ProjectMilestoneDTO(
@@ -146,15 +170,26 @@ public class ProjectService {
                                                 milestone.getDueDate(),
                                                 milestone.getCompleted()))
                                 .collect(Collectors.toList());
+                System.out.println("Converted " + milestoneDTOs.size() + " milestones");
 
                 List<UserProjectAssignmentDTO> assignmentDTOs = project.getUserAssignments().stream()
                                 .map(assignment -> {
+                                        System.out.println(
+                                                        "Processing assignment for userId: " + assignment.getUserId());
                                         String username = userTenantMappingRepository.findByTenantIdAndUserId(
                                                         TenantContext.getCurrentTenant(),
                                                         assignment.getUserId())
-                                                        .orElseThrow(() -> new RuntimeException(
-                                                                        "User mapping not found"))
-                                                        .getUsername();
+                                                        .map(mapping -> {
+                                                                System.out.println("Found mapping for userId: "
+                                                                                + assignment.getUserId() +
+                                                                                ", username: " + mapping.getUsername());
+                                                                return mapping.getUsername();
+                                                        })
+                                                        .orElseGet(() -> {
+                                                                System.out.println("No mapping found for userId: "
+                                                                                + assignment.getUserId());
+                                                                return "User-" + assignment.getUserId();
+                                                        });
 
                                         return new UserProjectAssignmentDTO(
                                                         username,
@@ -163,6 +198,7 @@ public class ProjectService {
                                                         assignment.getAssignedAt());
                                 })
                                 .collect(Collectors.toList());
+                System.out.println("Converted " + assignmentDTOs.size() + " assignments");
 
                 return new ProjectDTO(
                                 project.getId(),
