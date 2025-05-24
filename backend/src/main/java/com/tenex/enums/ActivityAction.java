@@ -25,5 +25,10 @@ public enum ActivityAction {
 
     // Task Status History actions
     CREATE_TASK_STATUS_HISTORY,
-    DELETE_TASK_STATUS_HISTORY
+    DELETE_TASK_STATUS_HISTORY,
+
+    // Task Checklist actions
+    CREATE_TASK_CHECKLIST,
+    UPDATE_TASK_CHECKLIST,
+    DELETE_TASK_CHECKLIST
 }

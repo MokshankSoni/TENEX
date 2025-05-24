@@ -232,6 +232,7 @@ public class TaskService {
                 task.setAssignedTo(dto.getAssignedTo());
                 task.setEstimatedTime(dto.getEstimatedTime());
                 task.setDueDate(dto.getDueDate());
+                task.setCreatedBy(dto.getCreatedBy());
         }
 
         private TaskDTO convertToDTO(Task task) {

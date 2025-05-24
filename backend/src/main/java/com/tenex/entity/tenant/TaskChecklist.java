@@ -1,7 +1,5 @@
 package com.tenex.entity.tenant;
 
-
-
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
