@@ -21,15 +21,13 @@ public class TenexApplication {
 	}
 
 	@EventListener
-	public void onApplicationEvent(ContextRefreshedEvent event)
-	{
+	public void onApplicationEvent(ContextRefreshedEvent event) {
 		TenantContext.setCurrentTenant("public");
 
 		tenantService.initializeDefaultRoles();
 
-		if(!tenantService.tenantExists("master"))
-		{
-			tenantService.createTenant("master","System Administrator");
+		if (!tenantService.tenantExists("master")) {
+			tenantService.createTenant("master", "System Administrator");
 		}
 	}
 }

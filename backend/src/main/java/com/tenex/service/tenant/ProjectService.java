@@ -181,10 +181,12 @@ public class ProjectService {
                                 .collect(Collectors.toList());
                 System.out.println("Converted " + taskDTOs.size() + " tasks");
 
+                // Convert milestones without including the full project reference
                 List<ProjectMilestoneDTO> milestoneDTOs = project.getMilestones().stream()
                                 .map(milestone -> new ProjectMilestoneDTO(
                                                 milestone.getId(),
-                                                milestone.getProject().getId(),
+                                                project.getId(), // Use project.getId() directly instead of
+                                                                 // milestone.getProject().getId()
                                                 milestone.getTitle(),
                                                 milestone.getDescription(),
                                                 milestone.getDueDate(),
@@ -213,7 +215,7 @@ public class ProjectService {
 
                                         return new UserProjectAssignmentDTO(
                                                         username,
-                                                        assignment.getProject().getId(),
+                                                        project.getId(), // Use project.getId() directly
                                                         assignment.getRoleInProject(),
                                                         assignment.getAssignedAt());
                                 })
