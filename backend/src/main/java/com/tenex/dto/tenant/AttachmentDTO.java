@@ -11,12 +11,13 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class AttachmentDTO {
     private Long id;
-    private Long taskId;
-    private Long commentId;
     private String fileName;
     private String fileType;
-    private Long fileSize;
     private String fileUrl;
+    private Long fileSize;
     private Long uploadedBy;
     private LocalDateTime uploadedAt;
+    private Long taskId;
+    private Long commentId;
+    private String downloadUrl; // This will be populated when needed
 }

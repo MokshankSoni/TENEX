@@ -7,6 +7,8 @@ import com.tenex.enums.ActivityAction;
 import com.tenex.repository.master.UserTenantMappingRepository;
 import com.tenex.repository.tenant.ProjectRepository;
 import com.tenex.util.ActivityLogUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class ProjectService {
+        private static final Logger logger = LoggerFactory.getLogger(ProjectService.class);
 
         @Autowired
         private ProjectRepository projectRepository;
@@ -153,74 +156,40 @@ public class ProjectService {
         }
 
         private ProjectDTO convertToDTO(Project project) {
-                System.out.println("Converting project: " + project.getId() + " to DTO");
-                System.out.println("Project details - Name: " + project.getName() + ", Status: " + project.getStatus());
-
-                // Debug tasks
-                System.out.println("Tasks collection: " + (project.getTasks() == null ? "null" : "not null"));
-                if (project.getTasks() != null) {
-                        System.out.println("Tasks size: " + project.getTasks().size());
-                        project.getTasks().forEach(task -> System.out
-                                        .println("Task - ID: " + task.getId() + ", Title: " + task.getTitle()));
-                }
-
-                // Debug assignments
-                System.out.println("Assignments collection: "
-                                + (project.getUserAssignments() == null ? "null" : "not null"));
-                if (project.getUserAssignments() != null) {
-                        System.out.println("Assignments size: " + project.getUserAssignments().size());
-                        project.getUserAssignments()
-                                        .forEach(assignment -> System.out.println("Assignment - UserId: "
-                                                        + assignment.getUserId() +
-                                                        ", ProjectId: " + assignment.getProject().getId() +
-                                                        ", Role: " + assignment.getRoleInProject()));
-                }
+                logger.debug("Converting project: {} to DTO", project.getId());
 
                 List<TaskDTO> taskDTOs = project.getTasks().stream()
                                 .map(this::convertToTaskDTO)
                                 .collect(Collectors.toList());
-                System.out.println("Converted " + taskDTOs.size() + " tasks");
+                logger.debug("Converted {} tasks", taskDTOs.size());
 
-                // Convert milestones without including the full project reference
                 List<ProjectMilestoneDTO> milestoneDTOs = project.getMilestones().stream()
                                 .map(milestone -> new ProjectMilestoneDTO(
                                                 milestone.getId(),
-                                                project.getId(), // Use project.getId() directly instead of
-                                                                 // milestone.getProject().getId()
+                                                project.getId(),
                                                 milestone.getTitle(),
                                                 milestone.getDescription(),
                                                 milestone.getDueDate(),
                                                 milestone.getCompleted()))
                                 .collect(Collectors.toList());
-                System.out.println("Converted " + milestoneDTOs.size() + " milestones");
+                logger.debug("Converted {} milestones", milestoneDTOs.size());
 
                 List<UserProjectAssignmentDTO> assignmentDTOs = project.getUserAssignments().stream()
                                 .map(assignment -> {
-                                        System.out.println(
-                                                        "Processing assignment for userId: " + assignment.getUserId());
                                         String username = userTenantMappingRepository.findByTenantIdAndUserId(
                                                         TenantContext.getCurrentTenant(),
                                                         assignment.getUserId())
-                                                        .map(mapping -> {
-                                                                System.out.println("Found mapping for userId: "
-                                                                                + assignment.getUserId() +
-                                                                                ", username: " + mapping.getUsername());
-                                                                return mapping.getUsername();
-                                                        })
-                                                        .orElseGet(() -> {
-                                                                System.out.println("No mapping found for userId: "
-                                                                                + assignment.getUserId());
-                                                                return "User-" + assignment.getUserId();
-                                                        });
+                                                        .map(mapping -> mapping.getUsername())
+                                                        .orElseGet(() -> "User-" + assignment.getUserId());
 
                                         return new UserProjectAssignmentDTO(
                                                         username,
-                                                        project.getId(), // Use project.getId() directly
+                                                        project.getId(),
                                                         assignment.getRoleInProject(),
                                                         assignment.getAssignedAt());
                                 })
                                 .collect(Collectors.toList());
-                System.out.println("Converted " + assignmentDTOs.size() + " assignments");
+                logger.debug("Converted {} assignments", assignmentDTOs.size());
 
                 return new ProjectDTO(
                                 project.getId(),
@@ -268,15 +237,17 @@ public class ProjectService {
                 List<AttachmentDTO> attachmentDTOs = task.getAttachments().stream()
                                 .map(attachment -> new AttachmentDTO(
                                                 attachment.getId(),
+                                                attachment.getFileName(),
+                                                attachment.getFileType(),
+                                                attachment.getFileUrl(),
+                                                attachment.getFileSize(),
+                                                attachment.getUploadedBy(),
+                                                attachment.getUploadedAt(),
                                                 attachment.getTask().getId(),
                                                 attachment.getComment() != null ? attachment.getComment().getId()
                                                                 : null,
-                                                attachment.getFileName(),
-                                                attachment.getFileType(),
-                                                attachment.getFileSize(),
-                                                attachment.getFileUrl(),
-                                                attachment.getUploadedBy(),
-                                                attachment.getUploadedAt()))
+                                                null // downloadUrl will be populated when needed
+                                ))
                                 .collect(Collectors.toList());
 
                 return new TaskDTO(

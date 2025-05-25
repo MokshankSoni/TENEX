@@ -198,12 +198,23 @@ public class TaskService {
                                         // Get current user from security context
                                         Authentication authentication = SecurityContextHolder.getContext()
                                                         .getAuthentication();
-                                        if (authentication != null
-                                                        && authentication.getPrincipal() instanceof UserDetailsImpl) {
-                                                UserDetailsImpl userDetails = (UserDetailsImpl) authentication
-                                                                .getPrincipal();
-                                                Long userId = userDetails.getId();
+                                        Long userId = null;
 
+                                        if (authentication != null && authentication.isAuthenticated()) {
+                                                if (authentication.getPrincipal() instanceof UserDetailsImpl) {
+                                                        UserDetailsImpl userDetails = (UserDetailsImpl) authentication
+                                                                        .getPrincipal();
+                                                        userId = userDetails.getId();
+                                                } else {
+                                                        logger.warn("Authentication principal is not UserDetailsImpl: {}",
+                                                                        authentication.getPrincipal().getClass()
+                                                                                        .getName());
+                                                }
+                                        } else {
+                                                logger.warn("No authenticated user found for task status update");
+                                        }
+
+                                        if (userId != null) {
                                                 // Create task status history entry
                                                 TaskStatusHistoryDTO historyDTO = new TaskStatusHistoryDTO(
                                                                 null, // ID will be generated
@@ -267,15 +278,17 @@ public class TaskService {
                 List<AttachmentDTO> attachmentDTOs = task.getAttachments().stream()
                                 .map(attachment -> new AttachmentDTO(
                                                 attachment.getId(),
+                                                attachment.getFileName(),
+                                                attachment.getFileType(),
+                                                attachment.getFileUrl(),
+                                                attachment.getFileSize(),
+                                                attachment.getUploadedBy(),
+                                                attachment.getUploadedAt(),
                                                 attachment.getTask().getId(),
                                                 attachment.getComment() != null ? attachment.getComment().getId()
                                                                 : null,
-                                                attachment.getFileName(),
-                                                attachment.getFileType(),
-                                                attachment.getFileSize(),
-                                                attachment.getFileUrl(),
-                                                attachment.getUploadedBy(),
-                                                attachment.getUploadedAt()))
+                                                null // downloadUrl will be populated when needed
+                                ))
                                 .collect(Collectors.toList());
 
                 return new TaskDTO(
