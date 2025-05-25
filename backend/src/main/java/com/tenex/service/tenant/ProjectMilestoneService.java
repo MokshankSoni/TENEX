@@ -42,7 +42,7 @@ public class ProjectMilestoneService {
         ProjectMilestone savedMilestone = milestoneRepository.save(milestone);
 
         // Log activity
-        activityLogUtil.logActivity(ActivityAction.CREATE_PROJECT, "ProjectMilestone", savedMilestone.getId());
+        activityLogUtil.logActivity(ActivityAction.CREATE_MILESTONE, "ProjectMilestone", savedMilestone.getId());
 
         return convertToDTO(savedMilestone);
     }
@@ -59,7 +59,7 @@ public class ProjectMilestoneService {
                     ProjectMilestone updatedMilestone = milestoneRepository.save(milestone);
 
                     // Log activity
-                    activityLogUtil.logActivity(ActivityAction.UPDATE_PROJECT, "ProjectMilestone",
+                    activityLogUtil.logActivity(ActivityAction.UPDATE_MILESTONE, "ProjectMilestone",
                             updatedMilestone.getId());
 
                     return convertToDTO(updatedMilestone);
@@ -74,7 +74,7 @@ public class ProjectMilestoneService {
                     ProjectMilestone updatedMilestone = milestoneRepository.save(milestone);
 
                     // Log activity
-                    activityLogUtil.logActivity(ActivityAction.UPDATE_PROJECT, "ProjectMilestone",
+                    activityLogUtil.logActivity(ActivityAction.COMPLETE_MILESTONE, "ProjectMilestone",
                             updatedMilestone.getId());
 
                     return convertToDTO(updatedMilestone);

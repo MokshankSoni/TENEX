@@ -5,12 +5,14 @@ import com.tenex.dto.tenant.AttachmentDTO;
 import com.tenex.entity.tenant.Attachment;
 import com.tenex.entity.tenant.Task;
 import com.tenex.entity.tenant.Comment;
+import com.tenex.enums.ActivityAction;
 import com.tenex.repository.tenant.AttachmentRepository;
 import com.tenex.repository.tenant.TaskRepository;
 import com.tenex.repository.tenant.CommentRepository;
 import com.tenex.security.services.UserDetailsImpl;
 import com.tenex.exception.ResourceNotFoundException;
 import com.tenex.exception.ValidationException;
+import com.tenex.util.ActivityLogUtil;
 
 import io.minio.BucketExistsArgs;
 import io.minio.MakeBucketArgs;
@@ -56,6 +58,9 @@ public class AttachmentService {
 
     @Autowired
     private MinioClient minioClient;
+
+    @Autowired
+    private ActivityLogUtil activityLogUtil;
 
     @Value("${minio.bucketName}")
     private String bucketName;
@@ -147,6 +152,10 @@ public class AttachmentService {
             attachment.setUploadedAt(LocalDateTime.now());
 
             Attachment savedAttachment = attachmentRepository.save(attachment);
+
+            // Log activity
+            activityLogUtil.logActivity(ActivityAction.UPLOAD_ATTACHMENT, "Attachment", savedAttachment.getId());
+
             return convertToDTO(savedAttachment);
 
         } catch (Exception e) {
@@ -209,6 +218,9 @@ public class AttachmentService {
             attachmentRepository.delete(attachment);
             logger.info("Attachment metadata for ID {} deleted from database for tenant {}", attachmentId,
                     currentTenant);
+
+            // Log activity
+            activityLogUtil.logActivity(ActivityAction.DELETE_ATTACHMENT, "Attachment", attachmentId);
 
         } catch (Exception e) {
             logger.error("Error deleting attachment {}", attachmentId, e);

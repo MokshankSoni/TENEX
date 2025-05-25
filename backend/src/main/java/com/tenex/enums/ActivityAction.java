@@ -30,5 +30,15 @@ public enum ActivityAction {
     // Task Checklist actions
     CREATE_TASK_CHECKLIST,
     UPDATE_TASK_CHECKLIST,
-    DELETE_TASK_CHECKLIST
+    DELETE_TASK_CHECKLIST,
+
+    // Attachment actions
+    UPLOAD_ATTACHMENT,
+    DELETE_ATTACHMENT,
+
+    // Project Milestone actions
+    CREATE_MILESTONE,
+    UPDATE_MILESTONE,
+    DELETE_MILESTONE,
+    COMPLETE_MILESTONE
 }
