@@ -55,6 +55,14 @@ public class CommentService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(value = "tenantTransactionManager", readOnly = true)
+    public List<CommentDTO> getCommentsByProjectId(Long projectId) {
+        logger.info("Fetching comments for project ID: {}", projectId);
+        return commentRepository.findByProjectId(projectId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
     @Transactional(value = "tenantTransactionManager")
     public CommentDTO createComment(Long taskId, String content) {
         logger.info("Starting comment creation for task ID: {}", taskId);

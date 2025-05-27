@@ -40,6 +40,12 @@ public class CommentController {
         return ResponseEntity.ok(commentService.getCommentsByTaskId(taskId));
     }
 
+    @GetMapping("/project/{projectId}")
+    public ResponseEntity<List<CommentDTO>> getCommentsByProjectId(@PathVariable Long projectId) {
+        logger.info("Getting comments for project ID: {}", projectId);
+        return ResponseEntity.ok(commentService.getCommentsByProjectId(projectId));
+    }
+
     @PostMapping("/task/{taskId}")
     public ResponseEntity<CommentDTO> createComment(
             @PathVariable Long taskId,
