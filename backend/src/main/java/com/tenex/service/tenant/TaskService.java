@@ -5,6 +5,7 @@ import com.tenex.dto.tenant.*;
 import com.tenex.entity.tenant.Project;
 import com.tenex.entity.tenant.Task;
 import com.tenex.enums.ActivityAction;
+import com.tenex.repository.master.UserTenantMappingRepository;
 import com.tenex.repository.tenant.ProjectRepository;
 import com.tenex.repository.tenant.TaskRepository;
 import com.tenex.security.services.UserDetailsImpl;
@@ -31,16 +32,19 @@ public class TaskService {
         private final ProjectRepository projectRepository;
         private final ActivityLogUtil activityLogUtil;
         private final TaskStatusHistoryService taskStatusHistoryService;
+        private final UserTenantMappingRepository userTenantMappingRepository;
 
         @Autowired
         public TaskService(TaskRepository taskRepository,
                         ProjectRepository projectRepository,
                         ActivityLogUtil activityLogUtil,
-                        TaskStatusHistoryService taskStatusHistoryService) {
+                        TaskStatusHistoryService taskStatusHistoryService,
+                        UserTenantMappingRepository userTenantMappingRepository) {
                 this.taskRepository = taskRepository;
                 this.projectRepository = projectRepository;
                 this.activityLogUtil = activityLogUtil;
                 this.taskStatusHistoryService = taskStatusHistoryService;
+                this.userTenantMappingRepository = userTenantMappingRepository;
         }
 
         @Transactional(value = "tenantTransactionManager", readOnly = true)
@@ -291,6 +295,21 @@ public class TaskService {
                                 ))
                                 .collect(Collectors.toList());
 
+                List<UserTaskAssignmentDTO> userAssignmentDTOs = task.getUserTaskAssignments().stream()
+                                .map(assignment -> {
+                                        String username = userTenantMappingRepository.findByTenantIdAndUserId(
+                                                        TenantContext.getCurrentTenant(),
+                                                        assignment.getUserId())
+                                                        .map(mapping -> mapping.getUsername())
+                                                        .orElseGet(() -> "User-" + assignment.getUserId());
+
+                                        return new UserTaskAssignmentDTO(
+                                                        username,
+                                                        task.getId(),
+                                                        assignment.getAssignedAt());
+                                })
+                                .collect(Collectors.toList());
+
                 return new TaskDTO(
                                 task.getId(),
                                 task.getProject().getId(),
@@ -307,6 +326,7 @@ public class TaskService {
                                 commentDTOs,
                                 statusHistoryDTOs,
                                 checklistDTOs,
-                                attachmentDTOs);
+                                attachmentDTOs,
+                                userAssignmentDTOs);
         }
 }

@@ -94,7 +94,7 @@ public class TenantServiceImpl implements TenantService {
         }
 
         try (Connection connection = dataSource.getConnection();
-             Statement stmt = connection.createStatement()) {
+                Statement stmt = connection.createStatement()) {
 
             // Create projects table
             stmt.execute("CREATE TABLE IF NOT EXISTS " + tenantId + ".projects (" +
@@ -187,6 +187,15 @@ public class TenantServiceImpl implements TenantService {
                     "task_id BIGINT NOT NULL, " +
                     "item TEXT NOT NULL, " +
                     "completed BOOLEAN DEFAULT FALSE, " +
+                    "FOREIGN KEY (task_id) REFERENCES " + tenantId + ".tasks(id)" +
+                    ")");
+
+            // Create user_task_assignments table (Many-to-Many)
+            stmt.execute("CREATE TABLE IF NOT EXISTS " + tenantId + ".user_task_assignments (" +
+                    "user_id BIGINT NOT NULL, " +
+                    "task_id BIGINT NOT NULL, " +
+                    "assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                    "PRIMARY KEY (user_id, task_id), " +
                     "FOREIGN KEY (task_id) REFERENCES " + tenantId + ".tasks(id)" +
                     ")");
 

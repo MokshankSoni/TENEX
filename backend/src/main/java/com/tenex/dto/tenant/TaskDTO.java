@@ -28,4 +28,5 @@ public class TaskDTO {
     private List<TaskStatusHistoryDTO> statusHistory;
     private List<TaskChecklistDTO> checklists;
     private List<AttachmentDTO> attachments;
+    private List<UserTaskAssignmentDTO> userAssignments;
 }

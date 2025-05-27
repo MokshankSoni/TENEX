@@ -6,10 +6,12 @@ import com.tenex.entity.tenant.*;
 import com.tenex.enums.ActivityAction;
 import com.tenex.repository.master.UserTenantMappingRepository;
 import com.tenex.repository.tenant.ProjectRepository;
+import com.tenex.security.tenant.ProjectAuthorizationService;
 import com.tenex.util.ActivityLogUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +32,9 @@ public class ProjectService {
         @Autowired
         private ActivityLogUtil activityLogUtil;
 
+        @Autowired
+        private ProjectAuthorizationService projectAuthorizationService;
+
         /**
          * Find all projects for the current tenant
          *
@@ -37,6 +42,10 @@ public class ProjectService {
          */
         @Transactional(value = "tenantTransactionManager", readOnly = true)
         public List<ProjectDTO> findAllProjects() {
+                if (!projectAuthorizationService.canViewAllProjects()) {
+                        throw new AccessDeniedException("You don't have permission to view all projects");
+                }
+
                 String tenantId = TenantContext.getCurrentTenant();
                 return projectRepository.findAllWithTasksByTenantId(tenantId).stream()
                                 .map(this::convertToDTO)
@@ -51,6 +60,10 @@ public class ProjectService {
          */
         @Transactional(value = "tenantTransactionManager", readOnly = true)
         public Optional<ProjectDTO> findProjectById(Long id) {
+                if (!projectAuthorizationService.canViewProject(id)) {
+                        throw new AccessDeniedException("You don't have permission to view this project");
+                }
+
                 return projectRepository.findByIdWithManual(id)
                                 .map(this::convertToDTO);
         }
@@ -63,6 +76,10 @@ public class ProjectService {
          */
         @Transactional(value = "tenantTransactionManager")
         public ProjectDTO createProject(ProjectDTO projectDTO) {
+                if (!projectAuthorizationService.canCreateProject()) {
+                        throw new AccessDeniedException("You don't have permission to create projects");
+                }
+
                 Project project = new Project();
                 updateProjectFromDTO(project, projectDTO);
                 Project savedProject = projectRepository.save(project);
@@ -83,6 +100,10 @@ public class ProjectService {
          */
         @Transactional(value = "tenantTransactionManager")
         public Optional<ProjectDTO> updateProject(Long id, ProjectDTO projectDTO) {
+                if (!projectAuthorizationService.canViewProject(id)) {
+                        throw new AccessDeniedException("You don't have permission to update this project");
+                }
+
                 return projectRepository.findByIdWithManual(id)
                                 .map(project -> {
                                         updateProjectFromDTO(project, projectDTO);
@@ -104,6 +125,10 @@ public class ProjectService {
          */
         @Transactional("tenantTransactionManager")
         public boolean deleteProject(Long id) {
+                if (!projectAuthorizationService.canDeleteProject(id)) {
+                        throw new AccessDeniedException("You don't have permission to delete this project");
+                }
+
                 String tenantId = TenantContext.getCurrentTenant();
                 Optional<Project> project = projectRepository.findByIdWithManual(id);
 
@@ -127,6 +152,10 @@ public class ProjectService {
          */
         @Transactional(value = "tenantTransactionManager", readOnly = true)
         public List<ProjectDTO> findProjectsByStatus(String status) {
+                if (!projectAuthorizationService.canViewAllProjects()) {
+                        throw new AccessDeniedException("You don't have permission to view projects by status");
+                }
+
                 String tenantId = TenantContext.getCurrentTenant();
                 return projectRepository.findByTenantIdAndStatus(tenantId, status).stream()
                                 .map(this::convertToDTO)
@@ -141,6 +170,10 @@ public class ProjectService {
          */
         @Transactional(value = "tenantTransactionManager", readOnly = true)
         public List<ProjectDTO> searchProjectsByName(String name) {
+                if (!projectAuthorizationService.canSearchProjects()) {
+                        throw new AccessDeniedException("You don't have permission to search projects");
+                }
+
                 String tenantId = TenantContext.getCurrentTenant();
                 return projectRepository.findByNameContainingIgnoreCaseAndTenantId(name, tenantId).stream()
                                 .map(this::convertToDTO)
@@ -153,6 +186,7 @@ public class ProjectService {
                 project.setStatus(dto.getStatus());
                 project.setStartDate(dto.getStartDate());
                 project.setEndDate(dto.getEndDate());
+                project.setTenantId(TenantContext.getCurrentTenant());
         }
 
         private ProjectDTO convertToDTO(Project project) {
@@ -250,6 +284,21 @@ public class ProjectService {
                                 ))
                                 .collect(Collectors.toList());
 
+                List<UserTaskAssignmentDTO> userAssignmentDTOs = task.getUserTaskAssignments().stream()
+                                .map(assignment -> {
+                                        String username = userTenantMappingRepository.findByTenantIdAndUserId(
+                                                        TenantContext.getCurrentTenant(),
+                                                        assignment.getUserId())
+                                                        .map(mapping -> mapping.getUsername())
+                                                        .orElseGet(() -> "User-" + assignment.getUserId());
+
+                                        return new UserTaskAssignmentDTO(
+                                                        username,
+                                                        task.getId(),
+                                                        assignment.getAssignedAt());
+                                })
+                                .collect(Collectors.toList());
+
                 return new TaskDTO(
                                 task.getId(),
                                 task.getProject().getId(),
@@ -266,6 +315,7 @@ public class ProjectService {
                                 commentDTOs,
                                 statusHistoryDTOs,
                                 checklistDTOs,
-                                attachmentDTOs);
+                                attachmentDTOs,
+                                userAssignmentDTOs);
         }
 }

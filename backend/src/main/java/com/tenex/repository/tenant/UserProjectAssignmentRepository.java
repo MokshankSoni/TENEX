@@ -8,6 +8,7 @@ import com.tenex.entity.tenant.UserProjectAssignmentId;
 import com.tenex.entity.tenant.Project;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface UserProjectAssignmentRepository extends JpaRepository<UserProjectAssignment, UserProjectAssignmentId> {
@@ -21,4 +22,6 @@ public interface UserProjectAssignmentRepository extends JpaRepository<UserProje
     List<UserProjectAssignment> findByRoleInProject(String role);
 
     void deleteByUserIdAndProject(Long userId, Project project);
+
+    Optional<UserProjectAssignment> findByProjectIdAndUserId(Long projectId, Long userId);
 }
