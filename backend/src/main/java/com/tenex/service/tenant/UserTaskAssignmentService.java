@@ -8,8 +8,10 @@ import com.tenex.enums.ActivityAction;
 import com.tenex.repository.master.UserTenantMappingRepository;
 import com.tenex.repository.tenant.TaskRepository;
 import com.tenex.repository.tenant.UserTaskAssignmentRepository;
+import com.tenex.security.tenant.UserTaskAssignmentAuthorizationService;
 import com.tenex.util.ActivityLogUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,8 +34,15 @@ public class UserTaskAssignmentService {
         @Autowired
         private ActivityLogUtil activityLogUtil;
 
+        @Autowired
+        private UserTaskAssignmentAuthorizationService authorizationService;
+
         @Transactional(value = "tenantTransactionManager")
         public UserTaskAssignmentDTO createAssignment(UserTaskAssignmentDTO assignmentDTO) {
+                if (!authorizationService.canCreateAssignment()) {
+                        throw new AccessDeniedException("You don't have permission to create task assignments");
+                }
+
                 Task task = taskRepository.findById(assignmentDTO.getTaskId())
                                 .orElseThrow(() -> new RuntimeException("Task not found"));
 
@@ -60,6 +69,11 @@ public class UserTaskAssignmentService {
 
         @Transactional(value = "tenantTransactionManager", readOnly = true)
         public List<UserTaskAssignmentDTO> getAssignmentsByTaskId(Long taskId) {
+                if (!authorizationService.canViewAssignmentByTaskId()) {
+                        throw new AccessDeniedException(
+                                        "You don't have permission to view task assignments by task ID");
+                }
+
                 return assignmentRepository.findByTaskId(taskId).stream()
                                 .map(this::convertToDTO)
                                 .collect(Collectors.toList());
@@ -67,6 +81,11 @@ public class UserTaskAssignmentService {
 
         @Transactional(value = "tenantTransactionManager", readOnly = true)
         public List<UserTaskAssignmentDTO> getAssignmentsByUserId(Long userId) {
+                if (!authorizationService.canViewAssignmentByUserId()) {
+                        throw new AccessDeniedException(
+                                        "You don't have permission to view task assignments by user ID");
+                }
+
                 return assignmentRepository.findByUserId(userId).stream()
                                 .map(this::convertToDTO)
                                 .collect(Collectors.toList());
@@ -74,6 +93,10 @@ public class UserTaskAssignmentService {
 
         @Transactional(value = "tenantTransactionManager")
         public void deleteAssignment(Long taskId, String username) {
+                if (!authorizationService.canDeleteAssignment()) {
+                        throw new AccessDeniedException("You don't have permission to delete task assignments");
+                }
+
                 Task task = taskRepository.findById(taskId)
                                 .orElseThrow(() -> new RuntimeException("Task not found"));
 
@@ -90,7 +113,12 @@ public class UserTaskAssignmentService {
                 activityLogUtil.logActivity(ActivityAction.UNASSIGN_USER, "UserTaskAssignment", taskId);
         }
 
+        @Transactional(value = "tenantTransactionManager", readOnly = true)
         public List<UserTaskAssignmentDTO> getTasksAssignedToCurrentUser() {
+                if (!authorizationService.canViewMyAssignments()) {
+                        throw new AccessDeniedException("You don't have permission to view your task assignments");
+                }
+
                 String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
                 Long userId = userTenantMappingRepository.findByTenantIdAndUsername(
                                 TenantContext.getCurrentTenant(),

@@ -9,8 +9,10 @@ import com.tenex.repository.master.UserTenantMappingRepository;
 import com.tenex.repository.tenant.ProjectRepository;
 import com.tenex.repository.tenant.UserProjectAssignmentRepository;
 import com.tenex.config.multitenancy.TenantContext;
+import com.tenex.security.tenant.UserProjectAssignmentAuthorizationService;
 import com.tenex.util.ActivityLogUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,8 +34,15 @@ public class UserProjectAssignmentService {
         @Autowired
         private ActivityLogUtil activityLogUtil;
 
+        @Autowired
+        private UserProjectAssignmentAuthorizationService authorizationService;
+
         @Transactional(value = "tenantTransactionManager")
         public UserProjectAssignmentDTO createAssignment(UserProjectAssignmentDTO assignmentDTO) {
+                if (!authorizationService.canCreateAssignment()) {
+                        throw new AccessDeniedException("You don't have permission to create project assignments");
+                }
+
                 Project project = projectRepository.findByIdWithManual(assignmentDTO.getProjectId())
                                 .orElseThrow(() -> new RuntimeException("Project not found"));
 
@@ -61,6 +70,10 @@ public class UserProjectAssignmentService {
 
         @Transactional(value = "tenantTransactionManager")
         public UserProjectAssignmentDTO updateAssignment(UserProjectAssignmentDTO assignmentDTO) {
+                if (!authorizationService.canUpdateAssignment()) {
+                        throw new AccessDeniedException("You don't have permission to update project assignments");
+                }
+
                 Project project = projectRepository.findByIdWithManual(assignmentDTO.getProjectId())
                                 .orElseThrow(() -> new RuntimeException("Project not found"));
 
@@ -88,6 +101,10 @@ public class UserProjectAssignmentService {
 
         @Transactional(value = "tenantTransactionManager")
         public void deleteAssignment(String username, Long projectId) {
+                if (!authorizationService.canDeleteAssignment()) {
+                        throw new AccessDeniedException("You don't have permission to delete project assignments");
+                }
+
                 Project project = projectRepository.findByIdWithManual(projectId)
                                 .orElseThrow(() -> new RuntimeException("Project not found"));
 
@@ -107,6 +124,10 @@ public class UserProjectAssignmentService {
 
         @Transactional(value = "tenantTransactionManager", readOnly = true)
         public UserProjectAssignmentDTO getAssignment(String username, Long projectId) {
+                if (!authorizationService.canViewAssignments()) {
+                        throw new AccessDeniedException("You don't have permission to view project assignments");
+                }
+
                 Project project = projectRepository.findByIdWithManual(projectId)
                                 .orElseThrow(() -> new RuntimeException("Project not found"));
 
@@ -127,6 +148,11 @@ public class UserProjectAssignmentService {
 
         @Transactional(value = "tenantTransactionManager", readOnly = true)
         public List<UserProjectAssignmentDTO> getAssignmentsByUsername(String username) {
+                if (!authorizationService.canViewAssignmentsByUsername()) {
+                        throw new AccessDeniedException(
+                                        "You don't have permission to view project assignments by username");
+                }
+
                 // Get user ID from username
                 Long userId = userTenantMappingRepository.findByTenantIdAndUsername(
                                 TenantContext.getCurrentTenant(),
@@ -142,6 +168,10 @@ public class UserProjectAssignmentService {
 
         @Transactional(value = "tenantTransactionManager", readOnly = true)
         public List<UserProjectAssignmentDTO> getAssignmentsByProjectId(Long projectId) {
+                if (!authorizationService.canViewAssignments()) {
+                        throw new AccessDeniedException("You don't have permission to view project assignments");
+                }
+
                 Project project = projectRepository.findByIdWithManual(projectId)
                                 .orElseThrow(() -> new RuntimeException("Project not found"));
                 return assignmentRepository.findByProject(project).stream()
@@ -151,6 +181,11 @@ public class UserProjectAssignmentService {
 
         @Transactional(value = "tenantTransactionManager", readOnly = true)
         public List<UserProjectAssignmentDTO> getAssignmentsByRole(String role) {
+                if (!authorizationService.canViewAssignmentsByRole()) {
+                        throw new AccessDeniedException(
+                                        "You don't have permission to view project assignments by role");
+                }
+
                 return assignmentRepository.findByRoleInProject(role).stream()
                                 .map(this::convertToDTO)
                                 .collect(Collectors.toList());
