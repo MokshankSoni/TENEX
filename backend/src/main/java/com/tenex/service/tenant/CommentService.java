@@ -7,10 +7,12 @@ import com.tenex.enums.ActivityAction;
 import com.tenex.repository.tenant.CommentRepository;
 import com.tenex.repository.tenant.TaskRepository;
 import com.tenex.security.services.UserDetailsImpl;
+import com.tenex.security.tenant.CommentAuthorizationService;
 import com.tenex.util.ActivityLogUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -33,8 +35,15 @@ public class CommentService {
     @Autowired
     private ActivityLogUtil activityLogUtil;
 
+    @Autowired
+    private CommentAuthorizationService authorizationService;
+
     @Transactional(value = "tenantTransactionManager", readOnly = true)
     public List<CommentDTO> getAllComments() {
+        if (!authorizationService.canGetAllComments()) {
+            throw new AccessDeniedException("You don't have permission to view all comments");
+        }
+
         logger.info("Fetching all comments");
         return commentRepository.findAll().stream()
                 .map(this::convertToDTO)
@@ -43,6 +52,10 @@ public class CommentService {
 
     @Transactional(value = "tenantTransactionManager", readOnly = true)
     public Optional<CommentDTO> getCommentById(Long id) {
+        if (!authorizationService.canGetCommentById()) {
+            throw new AccessDeniedException("You don't have permission to view this comment");
+        }
+
         logger.info("Fetching comment with ID: {}", id);
         return commentRepository.findById(id)
                 .map(this::convertToDTO);
@@ -50,6 +63,10 @@ public class CommentService {
 
     @Transactional(value = "tenantTransactionManager", readOnly = true)
     public List<CommentDTO> getCommentsByTaskId(Long taskId) {
+        if (!authorizationService.canGetCommentsByTaskId(taskId)) {
+            throw new AccessDeniedException("You don't have permission to view comments for this task");
+        }
+
         return commentRepository.findByTaskId(taskId).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -57,6 +74,10 @@ public class CommentService {
 
     @Transactional(value = "tenantTransactionManager", readOnly = true)
     public List<CommentDTO> getCommentsByProjectId(Long projectId) {
+        if (!authorizationService.canGetCommentsByProjectId(projectId)) {
+            throw new AccessDeniedException("You don't have permission to view comments for this project");
+        }
+
         logger.info("Fetching comments for project ID: {}", projectId);
         return commentRepository.findByProjectId(projectId).stream()
                 .map(this::convertToDTO)
@@ -65,6 +86,10 @@ public class CommentService {
 
     @Transactional(value = "tenantTransactionManager")
     public CommentDTO createComment(Long taskId, String content) {
+        if (!authorizationService.canCreateComment()) {
+            throw new AccessDeniedException("You don't have permission to create comments");
+        }
+
         logger.info("Starting comment creation for task ID: {}", taskId);
 
         Task task = taskRepository.findById(taskId)
@@ -118,6 +143,10 @@ public class CommentService {
 
     @Transactional(value = "tenantTransactionManager")
     public CommentDTO updateComment(Long commentId, String content) {
+        if (!authorizationService.canUpdateComment()) {
+            throw new AccessDeniedException("You don't have permission to update comments");
+        }
+
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new RuntimeException("Comment not found"));
 
@@ -132,6 +161,10 @@ public class CommentService {
 
     @Transactional(value = "tenantTransactionManager")
     public void deleteComment(Long commentId) {
+        if (!authorizationService.canDeleteComment()) {
+            throw new AccessDeniedException("You don't have permission to delete comments");
+        }
+
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new RuntimeException("Comment not found"));
 

@@ -10,6 +10,7 @@ import com.tenex.repository.tenant.AttachmentRepository;
 import com.tenex.repository.tenant.TaskRepository;
 import com.tenex.repository.tenant.CommentRepository;
 import com.tenex.security.services.UserDetailsImpl;
+import com.tenex.security.tenant.AttachmentAuthorizationService;
 import com.tenex.exception.ResourceNotFoundException;
 import com.tenex.exception.ValidationException;
 import com.tenex.util.ActivityLogUtil;
@@ -27,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -61,6 +63,9 @@ public class AttachmentService {
 
     @Autowired
     private ActivityLogUtil activityLogUtil;
+
+    @Autowired
+    private AttachmentAuthorizationService authorizationService;
 
     @Value("${minio.bucketName}")
     private String bucketName;
@@ -97,6 +102,10 @@ public class AttachmentService {
 
     @Transactional("tenantTransactionManager")
     public AttachmentDTO uploadAttachment(MultipartFile file, Long taskId, Long commentId) {
+        if (!authorizationService.canUploadAttachment()) {
+            throw new AccessDeniedException("You don't have permission to upload attachments");
+        }
+
         if (file.isEmpty()) {
             throw new ValidationException("Cannot upload empty file");
         }
@@ -166,6 +175,10 @@ public class AttachmentService {
 
     @Transactional(value = "tenantTransactionManager", readOnly = true)
     public AttachmentDTO getAttachmentWithDownloadUrl(Long attachmentId) {
+        if (!authorizationService.canDownloadAttachment()) {
+            throw new AccessDeniedException("You don't have permission to download attachments");
+        }
+
         Attachment attachment = attachmentRepository.findById(attachmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Attachment not found with ID: " + attachmentId));
 
@@ -197,6 +210,10 @@ public class AttachmentService {
 
     @Transactional("tenantTransactionManager")
     public void deleteAttachment(Long attachmentId) {
+        if (!authorizationService.canDeleteAttachment()) {
+            throw new AccessDeniedException("You don't have permission to delete attachments");
+        }
+
         Attachment attachment = attachmentRepository.findById(attachmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Attachment not found with ID: " + attachmentId));
 
@@ -230,6 +247,10 @@ public class AttachmentService {
 
     @Transactional(value = "tenantTransactionManager", readOnly = true)
     public Optional<AttachmentDTO> getAttachmentById(Long attachmentId) {
+        if (!authorizationService.canGetAttachment()) {
+            throw new AccessDeniedException("You don't have permission to view attachments");
+        }
+
         Optional<Attachment> attachment = attachmentRepository.findById(attachmentId);
         if (attachment.isPresent()) {
             String currentTenant = TenantContext.getCurrentTenant();
