@@ -6,8 +6,10 @@ import com.tenex.entity.tenant.ProjectMilestone;
 import com.tenex.enums.ActivityAction;
 import com.tenex.repository.tenant.ProjectMilestoneRepository;
 import com.tenex.repository.tenant.ProjectRepository;
+import com.tenex.security.tenant.ProjectMilestoneAuthorizationService;
 import com.tenex.util.ActivityLogUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,8 +29,15 @@ public class ProjectMilestoneService {
     @Autowired
     private ActivityLogUtil activityLogUtil;
 
+    @Autowired
+    private ProjectMilestoneAuthorizationService authorizationService;
+
     @Transactional(value = "tenantTransactionManager")
     public ProjectMilestoneDTO createMilestone(ProjectMilestoneDTO milestoneDTO) {
+        if (!authorizationService.canCreateMilestone(milestoneDTO.getProjectId())) {
+            throw new AccessDeniedException("You don't have permission to create milestones for this project");
+        }
+
         Project project = projectRepository.findByIdWithManual(milestoneDTO.getProjectId())
                 .orElseThrow(() -> new RuntimeException("Project not found"));
 
@@ -51,6 +60,11 @@ public class ProjectMilestoneService {
     public Optional<ProjectMilestoneDTO> updateMilestone(Long id, ProjectMilestoneDTO milestoneDTO) {
         return milestoneRepository.findById(id)
                 .map(milestone -> {
+                    if (!authorizationService.canUpdateMilestone(milestone.getProject().getId())) {
+                        throw new AccessDeniedException(
+                                "You don't have permission to update milestones for this project");
+                    }
+
                     milestone.setTitle(milestoneDTO.getTitle());
                     milestone.setDescription(milestoneDTO.getDescription());
                     milestone.setDueDate(milestoneDTO.getDueDate());
@@ -70,6 +84,11 @@ public class ProjectMilestoneService {
     public Optional<ProjectMilestoneDTO> toggleCompleted(Long id) {
         return milestoneRepository.findById(id)
                 .map(milestone -> {
+                    if (!authorizationService.canToggleCompleted(milestone.getProject().getId())) {
+                        throw new AccessDeniedException(
+                                "You don't have permission to toggle milestone completion for this project");
+                    }
+
                     milestone.setCompleted(!milestone.getCompleted());
                     ProjectMilestone updatedMilestone = milestoneRepository.save(milestone);
 
@@ -84,11 +103,21 @@ public class ProjectMilestoneService {
     @Transactional(value = "tenantTransactionManager", readOnly = true)
     public Optional<ProjectMilestoneDTO> getMilestoneById(Long id) {
         return milestoneRepository.findById(id)
-                .map(this::convertToDTO);
+                .map(milestone -> {
+                    if (!authorizationService.canGetMilestoneById(milestone.getProject().getId())) {
+                        throw new AccessDeniedException(
+                                "You don't have permission to view milestones for this project");
+                    }
+                    return convertToDTO(milestone);
+                });
     }
 
     @Transactional(value = "tenantTransactionManager", readOnly = true)
     public List<ProjectMilestoneDTO> getMilestonesByProject(Long projectId) {
+        if (!authorizationService.canGetMilestonesByProject(projectId)) {
+            throw new AccessDeniedException("You don't have permission to view milestones for this project");
+        }
+
         Project project = projectRepository.findByIdWithManual(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found"));
         return milestoneRepository.findByProject(project).stream()
@@ -99,7 +128,7 @@ public class ProjectMilestoneService {
     private ProjectMilestoneDTO convertToDTO(ProjectMilestone milestone) {
         return new ProjectMilestoneDTO(
                 milestone.getId(),
-                milestone.getProject().getId(), // Only include the project ID
+                milestone.getProject().getId(),
                 milestone.getTitle(),
                 milestone.getDescription(),
                 milestone.getDueDate(),

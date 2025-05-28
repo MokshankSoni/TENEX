@@ -7,10 +7,12 @@ import com.tenex.entity.tenant.TaskChecklist;
 import com.tenex.enums.ActivityAction;
 import com.tenex.repository.tenant.TaskChecklistRepository;
 import com.tenex.repository.tenant.TaskRepository;
+import com.tenex.security.tenant.TaskChecklistAuthorizationService;
 import com.tenex.util.ActivityLogUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,19 +27,26 @@ public class TaskChecklistService {
         private final TaskChecklistRepository taskChecklistRepository;
         private final TaskRepository taskRepository;
         private final ActivityLogUtil activityLogUtil;
+        private final TaskChecklistAuthorizationService authorizationService;
 
         @Autowired
         public TaskChecklistService(
                         TaskChecklistRepository taskChecklistRepository,
                         TaskRepository taskRepository,
-                        ActivityLogUtil activityLogUtil) {
+                        ActivityLogUtil activityLogUtil,
+                        TaskChecklistAuthorizationService authorizationService) {
                 this.taskChecklistRepository = taskChecklistRepository;
                 this.taskRepository = taskRepository;
                 this.activityLogUtil = activityLogUtil;
+                this.authorizationService = authorizationService;
         }
 
         @Transactional(value = "tenantTransactionManager", readOnly = true)
         public List<TaskChecklistDTO> getChecklistsByTaskId(Long taskId) {
+                if (!authorizationService.canGetChecklistsByTaskId()) {
+                        throw new AccessDeniedException("You don't have permission to view task checklists");
+                }
+
                 logger.info("Fetching checklists for task ID: {} in tenant: {}", taskId,
                                 TenantContext.getCurrentTenant());
                 return taskChecklistRepository.findByTaskId(taskId).stream()
@@ -47,6 +56,10 @@ public class TaskChecklistService {
 
         @Transactional(value = "tenantTransactionManager", readOnly = true)
         public Optional<TaskChecklistDTO> getChecklistById(Long id) {
+                if (!authorizationService.canGetChecklistById()) {
+                        throw new AccessDeniedException("You don't have permission to view task checklists");
+                }
+
                 logger.info("Fetching checklist with ID: {} in tenant: {}", id, TenantContext.getCurrentTenant());
                 return taskChecklistRepository.findById(id)
                                 .map(this::convertToDTO);
@@ -54,6 +67,10 @@ public class TaskChecklistService {
 
         @Transactional("tenantTransactionManager")
         public TaskChecklistDTO createChecklist(TaskChecklistDTO dto) {
+                if (!authorizationService.canCreateChecklist()) {
+                        throw new AccessDeniedException("You don't have permission to create task checklists");
+                }
+
                 logger.info("Creating new checklist for task ID: {} in tenant: {}",
                                 dto.getTaskId(), TenantContext.getCurrentTenant());
 
@@ -77,6 +94,10 @@ public class TaskChecklistService {
 
         @Transactional("tenantTransactionManager")
         public TaskChecklistDTO updateChecklist(Long id, TaskChecklistDTO dto) {
+                if (!authorizationService.canUpdateChecklist()) {
+                        throw new AccessDeniedException("You don't have permission to update task checklists");
+                }
+
                 logger.info("Updating checklist with ID: {} in tenant: {}", id, TenantContext.getCurrentTenant());
 
                 TaskChecklist checklist = taskChecklistRepository.findById(id)
@@ -96,6 +117,10 @@ public class TaskChecklistService {
 
         @Transactional("tenantTransactionManager")
         public boolean deleteChecklist(Long id) {
+                if (!authorizationService.canDeleteChecklist()) {
+                        throw new AccessDeniedException("You don't have permission to delete task checklists");
+                }
+
                 logger.info("Deleting checklist with ID: {} in tenant: {}", id, TenantContext.getCurrentTenant());
                 return taskChecklistRepository.findById(id)
                                 .map(checklist -> {
@@ -110,6 +135,10 @@ public class TaskChecklistService {
 
         @Transactional("tenantTransactionManager")
         public TaskChecklistDTO toggleChecklistStatus(Long id) {
+                if (!authorizationService.canToggleStatus()) {
+                        throw new AccessDeniedException("You don't have permission to toggle task checklist status");
+                }
+
                 logger.info("Toggling completed status for checklist ID: {} in tenant: {}", id,
                                 TenantContext.getCurrentTenant());
 

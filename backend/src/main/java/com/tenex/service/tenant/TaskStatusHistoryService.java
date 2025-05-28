@@ -7,10 +7,12 @@ import com.tenex.entity.tenant.TaskStatusHistory;
 import com.tenex.enums.ActivityAction;
 import com.tenex.repository.tenant.TaskRepository;
 import com.tenex.repository.tenant.TaskStatusHistoryRepository;
+import com.tenex.security.tenant.TaskStatusHistoryAuthorizationService;
 import com.tenex.util.ActivityLogUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,19 +28,26 @@ public class TaskStatusHistoryService {
     private final TaskStatusHistoryRepository taskStatusHistoryRepository;
     private final TaskRepository taskRepository;
     private final ActivityLogUtil activityLogUtil;
+    private final TaskStatusHistoryAuthorizationService authorizationService;
 
     @Autowired
     public TaskStatusHistoryService(
             TaskStatusHistoryRepository taskStatusHistoryRepository,
             TaskRepository taskRepository,
-            ActivityLogUtil activityLogUtil) {
+            ActivityLogUtil activityLogUtil,
+            TaskStatusHistoryAuthorizationService authorizationService) {
         this.taskStatusHistoryRepository = taskStatusHistoryRepository;
         this.taskRepository = taskRepository;
         this.activityLogUtil = activityLogUtil;
+        this.authorizationService = authorizationService;
     }
 
     @Transactional(value = "tenantTransactionManager", readOnly = true)
     public List<TaskStatusHistoryDTO> getStatusHistoryByTaskId(Long taskId) {
+        if (!authorizationService.canGetStatusHistoryByTaskId()) {
+            throw new AccessDeniedException("You don't have permission to view task status history");
+        }
+
         logger.info("Fetching status history for task ID: {} in tenant: {}", taskId, TenantContext.getCurrentTenant());
         return taskStatusHistoryRepository.findByTaskIdOrderByChangedAtDesc(taskId).stream()
                 .map(this::convertToDTO)
@@ -47,6 +56,10 @@ public class TaskStatusHistoryService {
 
     @Transactional(value = "tenantTransactionManager", readOnly = true)
     public Optional<TaskStatusHistoryDTO> getStatusHistoryById(Long id) {
+        if (!authorizationService.canGetStatusHistoryById()) {
+            throw new AccessDeniedException("You don't have permission to view task status history");
+        }
+
         logger.info("Fetching status history with ID: {} in tenant: {}", id, TenantContext.getCurrentTenant());
         return taskStatusHistoryRepository.findById(id)
                 .map(this::convertToDTO);
@@ -54,6 +67,10 @@ public class TaskStatusHistoryService {
 
     @Transactional("tenantTransactionManager")
     public TaskStatusHistoryDTO createStatusHistory(TaskStatusHistoryDTO dto) {
+        if (!authorizationService.canCreateStatusHistory()) {
+            throw new AccessDeniedException("You don't have permission to create task status history");
+        }
+
         logger.info("Creating new status history for task ID: {} in tenant: {}",
                 dto.getTaskId(), TenantContext.getCurrentTenant());
 
@@ -77,6 +94,10 @@ public class TaskStatusHistoryService {
 
     @Transactional("tenantTransactionManager")
     public boolean deleteStatusHistory(Long id) {
+        if (!authorizationService.canDeleteStatusHistory()) {
+            throw new AccessDeniedException("You don't have permission to delete task status history");
+        }
+
         logger.info("Deleting status history with ID: {} in tenant: {}", id, TenantContext.getCurrentTenant());
         return taskStatusHistoryRepository.findById(id)
                 .map(history -> {

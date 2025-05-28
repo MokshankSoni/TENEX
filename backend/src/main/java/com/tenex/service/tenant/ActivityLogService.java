@@ -26,7 +26,6 @@ public class ActivityLogService {
 
     @Transactional(value = "tenantTransactionManager")
     public ActivityLog createActivityLog(ActivityLog activityLog) {
-        // No authorization check for creating logs as per requirements
         return activityLogRepository.save(activityLog);
     }
 
