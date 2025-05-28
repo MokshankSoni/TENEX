@@ -8,11 +8,13 @@ import com.tenex.enums.ActivityAction;
 import com.tenex.repository.master.UserTenantMappingRepository;
 import com.tenex.repository.tenant.ProjectRepository;
 import com.tenex.repository.tenant.TaskRepository;
+import com.tenex.security.tenant.TaskAuthorizationService;
 import com.tenex.security.services.UserDetailsImpl;
 import com.tenex.util.ActivityLogUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -33,22 +35,29 @@ public class TaskService {
         private final ActivityLogUtil activityLogUtil;
         private final TaskStatusHistoryService taskStatusHistoryService;
         private final UserTenantMappingRepository userTenantMappingRepository;
+        private final TaskAuthorizationService taskAuthorizationService;
 
         @Autowired
         public TaskService(TaskRepository taskRepository,
                         ProjectRepository projectRepository,
                         ActivityLogUtil activityLogUtil,
                         TaskStatusHistoryService taskStatusHistoryService,
-                        UserTenantMappingRepository userTenantMappingRepository) {
+                        UserTenantMappingRepository userTenantMappingRepository,
+                        TaskAuthorizationService taskAuthorizationService) {
                 this.taskRepository = taskRepository;
                 this.projectRepository = projectRepository;
                 this.activityLogUtil = activityLogUtil;
                 this.taskStatusHistoryService = taskStatusHistoryService;
                 this.userTenantMappingRepository = userTenantMappingRepository;
+                this.taskAuthorizationService = taskAuthorizationService;
         }
 
         @Transactional(value = "tenantTransactionManager", readOnly = true)
         public List<TaskDTO> getAllTasks() {
+                if (!taskAuthorizationService.canViewAllTasks()) {
+                        throw new AccessDeniedException("You don't have permission to view all tasks");
+                }
+
                 logger.info("Fetching all tasks for tenant: {}", TenantContext.getCurrentTenant());
                 return taskRepository.findAllWithProject().stream()
                                 .map(this::convertToDTO)
@@ -57,6 +66,10 @@ public class TaskService {
 
         @Transactional(value = "tenantTransactionManager", readOnly = true)
         public Optional<TaskDTO> getTaskById(Long id) {
+                if (!taskAuthorizationService.canViewTask(id)) {
+                        throw new AccessDeniedException("You don't have permission to view this task");
+                }
+
                 logger.info("Fetching task with ID: {} for tenant: {}", id, TenantContext.getCurrentTenant());
                 return taskRepository.findById(id)
                                 .map(this::convertToDTO);
@@ -64,6 +77,10 @@ public class TaskService {
 
         @Transactional("tenantTransactionManager")
         public TaskDTO createTask(TaskDTO taskDTO) {
+                if (!taskAuthorizationService.canCreateTask()) {
+                        throw new AccessDeniedException("You don't have permission to create tasks");
+                }
+
                 logger.info("Creating new task for project ID: {} in tenant: {}",
                                 taskDTO.getProjectId(), TenantContext.getCurrentTenant());
 
@@ -85,6 +102,10 @@ public class TaskService {
 
         @Transactional("tenantTransactionManager")
         public Optional<TaskDTO> updateTask(Long id, TaskDTO taskDTO) {
+                if (!taskAuthorizationService.canUpdateTask(id)) {
+                        throw new AccessDeniedException("You don't have permission to update this task");
+                }
+
                 logger.info("Updating task with ID: {} for tenant: {}", id, TenantContext.getCurrentTenant());
 
                 return taskRepository.findById(id)
@@ -114,6 +135,10 @@ public class TaskService {
 
         @Transactional("tenantTransactionManager")
         public boolean deleteTask(Long id) {
+                if (!taskAuthorizationService.canDeleteTask(id)) {
+                        throw new AccessDeniedException("You don't have permission to delete this task");
+                }
+
                 logger.info("Deleting task with ID: {} for tenant: {}", id, TenantContext.getCurrentTenant());
                 return taskRepository.findById(id)
                                 .map(task -> {
@@ -129,6 +154,10 @@ public class TaskService {
 
         @Transactional(value = "tenantTransactionManager", readOnly = true)
         public List<TaskDTO> getTasksByProject(Long projectId) {
+                if (!taskAuthorizationService.canViewTasksByProject(projectId)) {
+                        throw new AccessDeniedException("You don't have permission to view tasks for this project");
+                }
+
                 logger.info("Fetching tasks for project ID: {} in tenant: {}", projectId,
                                 TenantContext.getCurrentTenant());
                 return taskRepository.findByProjectId(projectId).stream()
@@ -138,6 +167,10 @@ public class TaskService {
 
         @Transactional(value = "tenantTransactionManager", readOnly = true)
         public List<TaskDTO> getTasksByAssignee(Long userId) {
+                if (!taskAuthorizationService.canViewTasksByAssignee()) {
+                        throw new AccessDeniedException("You don't have permission to view tasks by assignee");
+                }
+
                 logger.info("Fetching tasks assigned to user ID: {} in tenant: {}", userId,
                                 TenantContext.getCurrentTenant());
                 return taskRepository.findByAssignedTo(userId).stream()
@@ -147,6 +180,10 @@ public class TaskService {
 
         @Transactional(value = "tenantTransactionManager", readOnly = true)
         public List<TaskDTO> getTasksByStatus(String status) {
+                if (!taskAuthorizationService.canViewTasksByStatus()) {
+                        throw new AccessDeniedException("You don't have permission to view tasks by status");
+                }
+
                 logger.info("Fetching tasks with status: {} in tenant: {}", status, TenantContext.getCurrentTenant());
                 return taskRepository.findByStatus(status).stream()
                                 .map(this::convertToDTO)
@@ -155,6 +192,10 @@ public class TaskService {
 
         @Transactional(value = "tenantTransactionManager", readOnly = true)
         public List<TaskDTO> getTasksByDueDate(LocalDate dueDate) {
+                if (!taskAuthorizationService.canViewTasksByDueDate()) {
+                        throw new AccessDeniedException("You don't have permission to view tasks by due date");
+                }
+
                 logger.info("Fetching tasks due before: {} in tenant: {}", dueDate, TenantContext.getCurrentTenant());
                 return taskRepository.findByDueDateBefore(dueDate).stream()
                                 .map(this::convertToDTO)
@@ -163,6 +204,10 @@ public class TaskService {
 
         @Transactional(value = "tenantTransactionManager", readOnly = true)
         public List<TaskDTO> searchTasksByTitle(String title) {
+                if (!taskAuthorizationService.canViewTasksByName()) {
+                        throw new AccessDeniedException("You don't have permission to search tasks by title");
+                }
+
                 logger.info("Searching tasks with title containing: {} in tenant: {}", title,
                                 TenantContext.getCurrentTenant());
                 return taskRepository.findByTitleContainingIgnoreCase(title).stream()
@@ -172,6 +217,10 @@ public class TaskService {
 
         @Transactional(value = "tenantTransactionManager", readOnly = true)
         public List<TaskDTO> getTasksByCreator(Long userId) {
+                if (!taskAuthorizationService.canViewTasksByCreator()) {
+                        throw new AccessDeniedException("You don't have permission to view tasks by creator");
+                }
+
                 logger.info("Fetching tasks created by user ID: {} in tenant: {}", userId,
                                 TenantContext.getCurrentTenant());
                 return taskRepository.findByCreatedBy(userId).stream()
@@ -181,6 +230,10 @@ public class TaskService {
 
         @Transactional(value = "tenantTransactionManager", readOnly = true)
         public List<TaskDTO> getTasksByPriority(String priority) {
+                if (!taskAuthorizationService.canViewTasksByPriority()) {
+                        throw new AccessDeniedException("You don't have permission to view tasks by priority");
+                }
+
                 logger.info("Fetching tasks with priority: {} in tenant: {}", priority,
                                 TenantContext.getCurrentTenant());
                 return taskRepository.findByPriority(priority).stream()
@@ -190,6 +243,10 @@ public class TaskService {
 
         @Transactional("tenantTransactionManager")
         public Optional<TaskDTO> updateTaskStatus(Long id, String newStatus) {
+                if (!taskAuthorizationService.canUpdateTaskStatus()) {
+                        throw new AccessDeniedException("You don't have permission to update task status");
+                }
+
                 logger.info("Updating status for task ID: {} to {} in tenant: {}",
                                 id, newStatus, TenantContext.getCurrentTenant());
 

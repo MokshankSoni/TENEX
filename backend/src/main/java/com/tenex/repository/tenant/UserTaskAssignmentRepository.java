@@ -8,6 +8,7 @@ import com.tenex.entity.tenant.UserTaskAssignmentId;
 import com.tenex.entity.tenant.Task;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface UserTaskAssignmentRepository extends JpaRepository<UserTaskAssignment, UserTaskAssignmentId> {
@@ -19,4 +20,6 @@ public interface UserTaskAssignmentRepository extends JpaRepository<UserTaskAssi
     List<UserTaskAssignment> findByTaskId(Long taskId);
 
     void deleteByUserIdAndTask(Long userId, Task task);
+
+    Optional<UserTaskAssignment> findByTaskIdAndUserId(Long taskId, Long userId);
 }
