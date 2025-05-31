@@ -1,78 +1,153 @@
-// Permission configuration for different user roles
+// src/config/permissions.js
+import { ROLES } from '../utils/roleUtils';
+
+// Permission constants
 export const PERMISSIONS = {
-  // Super Admin permissions
-  SUPER_ADMIN: {
-    MANAGE_TENANTS: 'manage_tenants',
-    MANAGE_PLATFORM: 'manage_platform',
-    VIEW_SYSTEM_METRICS: 'view_system_metrics',
-    MANAGE_USERS: 'manage_users',
-  },
+  // User management permissions
+  VIEW_USERS: 'view_users',
+  CREATE_USER: 'create_user',
+  EDIT_USER: 'edit_user',
+  DELETE_USER: 'delete_user',
 
-  // Tenant Admin permissions
-  TENANT_ADMIN: {
-    MANAGE_PROJECTS: 'manage_projects',
-    MANAGE_TENANT_USERS: 'manage_tenant_users',
-    VIEW_ANALYTICS: 'view_analytics',
-    MANAGE_TENANT_SETTINGS: 'manage_tenant_settings',
-    VIEW_ACTIVITY_LOGS: 'view_activity_logs',
-  },
+  // Project management permissions
+  VIEW_PROJECTS: 'view_projects',
+  CREATE_PROJECT: 'create_project',
+  EDIT_PROJECT: 'edit_project',
+  DELETE_PROJECT: 'delete_project',
 
-  // Project Manager permissions
-  PROJECT_MANAGER: {
-    MANAGE_TASKS: 'manage_tasks',
-    ASSIGN_TASKS: 'assign_tasks',
-    VIEW_TEAM_METRICS: 'view_team_metrics',
-    MANAGE_MILESTONES: 'manage_milestones',
-    GENERATE_REPORTS: 'generate_reports',
-  },
+  // Task management permissions
+  VIEW_TASKS: 'view_tasks',
+  CREATE_TASK: 'create_task',
+  EDIT_TASK: 'edit_task',
+  DELETE_TASK: 'delete_task',
+  ASSIGN_TASK: 'assign_task',
 
-  // Team Member permissions
-  TEAM_MEMBER: {
-    VIEW_TASKS: 'view_tasks',
-    UPDATE_TASK_STATUS: 'update_task_status',
-    ADD_COMMENTS: 'add_comments',
-    UPLOAD_ATTACHMENTS: 'upload_attachments',
-  },
+  // Tenant management permissions
+  VIEW_TENANTS: 'view_tenants',
+  CREATE_TENANT: 'create_tenant',
+  EDIT_TENANT: 'edit_tenant',
+  DELETE_TENANT: 'delete_tenant',
 
-  // Client permissions
-  CLIENT: {
-    VIEW_PROJECTS: 'view_projects',
-    VIEW_TASKS: 'view_tasks',
-    RECEIVE_UPDATES: 'receive_updates',
-  },
+  // System management permissions
+  VIEW_SYSTEM_SETTINGS: 'view_system_settings',
+  EDIT_SYSTEM_SETTINGS: 'edit_system_settings',
+  VIEW_ACTIVITY_LOGS: 'view_activity_logs',
+  VIEW_ANALYTICS: 'view_analytics'
 };
 
-// Role-based access control configuration
+// Role-based permissions mapping
 export const ROLE_PERMISSIONS = {
-  SUPER_ADMIN: [
-    PERMISSIONS.SUPER_ADMIN.MANAGE_TENANTS,
-    PERMISSIONS.SUPER_ADMIN.MANAGE_PLATFORM,
-    PERMISSIONS.SUPER_ADMIN.VIEW_SYSTEM_METRICS,
-    PERMISSIONS.SUPER_ADMIN.MANAGE_USERS,
+  [ROLES.SUPER_ADMIN]: [
+    // User management
+    PERMISSIONS.VIEW_USERS,
+    PERMISSIONS.CREATE_USER,
+    PERMISSIONS.EDIT_USER,
+    PERMISSIONS.DELETE_USER,
+
+    // Project management
+    PERMISSIONS.VIEW_PROJECTS,
+    PERMISSIONS.CREATE_PROJECT,
+    PERMISSIONS.EDIT_PROJECT,
+    PERMISSIONS.DELETE_PROJECT,
+
+    // Task management
+    PERMISSIONS.VIEW_TASKS,
+    PERMISSIONS.CREATE_TASK,
+    PERMISSIONS.EDIT_TASK,
+    PERMISSIONS.DELETE_TASK,
+    PERMISSIONS.ASSIGN_TASK,
+
+    // Tenant management
+    PERMISSIONS.VIEW_TENANTS,
+    PERMISSIONS.CREATE_TENANT,
+    PERMISSIONS.EDIT_TENANT,
+    PERMISSIONS.DELETE_TENANT,
+
+    // System management
+    PERMISSIONS.VIEW_SYSTEM_SETTINGS,
+    PERMISSIONS.EDIT_SYSTEM_SETTINGS,
+    PERMISSIONS.VIEW_ACTIVITY_LOGS,
+    PERMISSIONS.VIEW_ANALYTICS
   ],
-  TENANT_ADMIN: [
-    PERMISSIONS.TENANT_ADMIN.MANAGE_PROJECTS,
-    PERMISSIONS.TENANT_ADMIN.MANAGE_TENANT_USERS,
-    PERMISSIONS.TENANT_ADMIN.VIEW_ANALYTICS,
-    PERMISSIONS.TENANT_ADMIN.MANAGE_TENANT_SETTINGS,
-    PERMISSIONS.TENANT_ADMIN.VIEW_ACTIVITY_LOGS,
+
+  [ROLES.TENANT_ADMIN]: [
+    // User management
+    PERMISSIONS.VIEW_USERS,
+    PERMISSIONS.CREATE_USER,
+    PERMISSIONS.EDIT_USER,
+    PERMISSIONS.DELETE_USER,
+
+    // Project management
+    PERMISSIONS.VIEW_PROJECTS,
+    PERMISSIONS.CREATE_PROJECT,
+    PERMISSIONS.EDIT_PROJECT,
+    PERMISSIONS.DELETE_PROJECT,
+
+    // Task management
+    PERMISSIONS.VIEW_TASKS,
+    PERMISSIONS.CREATE_TASK,
+    PERMISSIONS.EDIT_TASK,
+    PERMISSIONS.DELETE_TASK,
+    PERMISSIONS.ASSIGN_TASK,
+
+    // System management
+    PERMISSIONS.VIEW_ACTIVITY_LOGS,
+    PERMISSIONS.VIEW_ANALYTICS
   ],
-  PROJECT_MANAGER: [
-    PERMISSIONS.PROJECT_MANAGER.MANAGE_TASKS,
-    PERMISSIONS.PROJECT_MANAGER.ASSIGN_TASKS,
-    PERMISSIONS.PROJECT_MANAGER.VIEW_TEAM_METRICS,
-    PERMISSIONS.PROJECT_MANAGER.MANAGE_MILESTONES,
-    PERMISSIONS.PROJECT_MANAGER.GENERATE_REPORTS,
+
+  [ROLES.PROJECT_MANAGER]: [
+    // User management
+    PERMISSIONS.VIEW_USERS,
+
+    // Project management
+    PERMISSIONS.VIEW_PROJECTS,
+    PERMISSIONS.CREATE_PROJECT,
+    PERMISSIONS.EDIT_PROJECT,
+
+    // Task management
+    PERMISSIONS.VIEW_TASKS,
+    PERMISSIONS.CREATE_TASK,
+    PERMISSIONS.EDIT_TASK,
+    PERMISSIONS.ASSIGN_TASK,
+
+    // System management
+    PERMISSIONS.VIEW_ANALYTICS
   ],
-  TEAM_MEMBER: [
-    PERMISSIONS.TEAM_MEMBER.VIEW_TASKS,
-    PERMISSIONS.TEAM_MEMBER.UPDATE_TASK_STATUS,
-    PERMISSIONS.TEAM_MEMBER.ADD_COMMENTS,
-    PERMISSIONS.TEAM_MEMBER.UPLOAD_ATTACHMENTS,
+
+  [ROLES.TEAM_MEMBER]: [
+    // Project management
+    PERMISSIONS.VIEW_PROJECTS,
+
+    // Task management
+    PERMISSIONS.VIEW_TASKS,
+    PERMISSIONS.EDIT_TASK
   ],
-  CLIENT: [
-    PERMISSIONS.CLIENT.VIEW_PROJECTS,
-    PERMISSIONS.CLIENT.VIEW_TASKS,
-    PERMISSIONS.CLIENT.RECEIVE_UPDATES,
-  ],
+
+  [ROLES.CLIENT]: [
+    // Project management
+    PERMISSIONS.VIEW_PROJECTS,
+
+    // Task management
+    PERMISSIONS.VIEW_TASKS
+  ]
+};
+
+/**
+ * Check if a role has a specific permission
+ * @param {string} role - User's role
+ * @param {string} permission - Permission to check
+ * @returns {boolean} True if role has permission
+ */
+export const hasPermission = (role, permission) => {
+  if (!role || !permission) return false;
+  return ROLE_PERMISSIONS[role]?.includes(permission) || false;
+};
+
+/**
+ * Get all permissions for a role
+ * @param {string} role - User's role
+ * @returns {string[]} Array of permissions
+ */
+export const getRolePermissions = (role) => {
+  return ROLE_PERMISSIONS[role] || [];
 }; 

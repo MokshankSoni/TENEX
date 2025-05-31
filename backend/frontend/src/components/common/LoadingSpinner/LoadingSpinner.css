@@ -1,0 +1,95 @@
+/* src/components/common/LoadingSpinner/LoadingSpinner.css */
+
+.loading-spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.loading-spinner {
+  display: inline-block;
+  position: relative;
+}
+
+.loading-spinner-circle {
+  border-radius: 50%;
+  border-style: solid;
+  animation: loading-spin 1s linear infinite;
+}
+
+/* Sizes */
+.loading-spinner-small .loading-spinner-circle {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+.loading-spinner-medium .loading-spinner-circle {
+  width: 24px;
+  height: 24px;
+  border-width: 3px;
+}
+
+.loading-spinner-large .loading-spinner-circle {
+  width: 32px;
+  height: 32px;
+  border-width: 4px;
+}
+
+/* Colors */
+.loading-spinner-primary .loading-spinner-circle {
+  border-color: #667eea;
+  border-top-color: transparent;
+}
+
+.loading-spinner-white .loading-spinner-circle {
+  border-color: rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+}
+
+.loading-spinner-gray .loading-spinner-circle {
+  border-color: #e5e7eb;
+  border-top-color: #9ca3af;
+}
+
+.loading-spinner-success .loading-spinner-circle {
+  border-color: #10b981;
+  border-top-color: transparent;
+}
+
+.loading-spinner-danger .loading-spinner-circle {
+  border-color: #ef4444;
+  border-top-color: transparent;
+}
+
+/* Text */
+.loading-spinner-text {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* Animation */
+@keyframes loading-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .loading-spinner-large .loading-spinner-circle {
+    width: 28px;
+    height: 28px;
+    border-width: 3px;
+  }
+
+  .loading-spinner-text {
+    font-size: 13px;
+  }
+}

@@ -1,16 +1,40 @@
 // src/App.js
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify';
+import React, { Suspense } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthenticationContext';
+import { routes } from './config/routes';
+import './App.css';
 
-import 'react-toastify/dist/ReactToastify.css';
-
-
-
-function App() {
+const App = () => {
   return (
-    <h1>hello world</h1>
+    <Router>
+      <AuthProvider>
+        <Suspense
+          fallback={
+            <div className="loading-container">
+              <div className="loading-spinner" />
+            </div>
+          }
+        >
+          <Routes>
+            {routes.map(({ path, element: Element, title }) => (
+              <Route
+                key={path}
+                path={path}
+                element={
+                  <React.Fragment>
+                    <title>{title}</title>
+                    <Element />
+                  </React.Fragment>
+                }
+              />
+            ))}
+          </Routes>
+        </Suspense>
+      </AuthProvider>
+    </Router>
   );
-}
+};
 
 export default App;
 

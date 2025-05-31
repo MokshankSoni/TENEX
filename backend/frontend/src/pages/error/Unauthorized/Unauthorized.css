@@ -1,0 +1,97 @@
+/* src/pages/error/Unauthorized/Unauthorized.css */
+
+.unauthorized-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding: 20px;
+}
+
+.unauthorized-content {
+  text-align: center;
+  max-width: 600px;
+  padding: 40px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.unauthorized-title {
+  font-size: 120px;
+  font-weight: 700;
+  color: #f39c12;
+  margin: 0;
+  line-height: 1;
+}
+
+.unauthorized-subtitle {
+  font-size: 32px;
+  color: #2c3e50;
+  margin: 20px 0;
+}
+
+.unauthorized-message {
+  font-size: 18px;
+  color: #7f8c8d;
+  margin-bottom: 30px;
+  line-height: 1.6;
+}
+
+.unauthorized-actions {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+.unauthorized-button {
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  border: none;
+}
+
+.unauthorized-button.primary {
+  background-color: #f39c12;
+  color: white;
+}
+
+.unauthorized-button.primary:hover {
+  background-color: #d35400;
+}
+
+.unauthorized-button.secondary {
+  background-color: #ecf0f1;
+  color: #2c3e50;
+}
+
+.unauthorized-button.secondary:hover {
+  background-color: #bdc3c7;
+}
+
+@media (max-width: 480px) {
+  .unauthorized-title {
+    font-size: 80px;
+  }
+
+  .unauthorized-subtitle {
+    font-size: 24px;
+  }
+
+  .unauthorized-message {
+    font-size: 16px;
+  }
+
+  .unauthorized-actions {
+    flex-direction: column;
+  }
+
+  .unauthorized-button {
+    width: 100%;
+  }
+} 
