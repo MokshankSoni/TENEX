@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login, logout } from '../services/authService';
+import { login, logout, signUp as authSignUp } from '../services/authService';
 import { setToken, removeToken, getUserData } from '../utils/storageUtils';
 
 /**
@@ -66,6 +66,25 @@ export const useAuth = () => {
     }
   }, [navigate]);
 
+  const signUp = useCallback(async (userData) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await authSignUp(userData);
+      console.log('Sign up response:', response); // Debug log
+      
+      // After successful signup, redirect to sign in page
+      navigate('/signin');
+      return response;
+    } catch (err) {
+      console.error('Sign up error:', err);
+      setError(err.response?.data?.message || 'An error occurred during sign up');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [navigate]);
+
   const signOut = useCallback(() => {
     removeToken();
     setUser(null);
@@ -77,6 +96,7 @@ export const useAuth = () => {
     loading,
     error,
     signIn,
+    signUp,
     signOut,
     getCurrentUser,
     isAuthenticated: !!user

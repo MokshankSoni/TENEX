@@ -29,17 +29,9 @@ export const login = async (credentials) => {
 export const signUp = async (userData) => {
   try {
     const response = await api.post('/auth/signup', userData);
-    return {
-      success: true,
-      data: response.data,
-      message: 'Registration successful'
-    };
+    return response.data;
   } catch (error) {
-    return {
-      success: false,
-      message: error.response?.data?.message || 'Registration failed. Please try again.',
-      error: error.response?.data
-    };
+    throw error;
   }
 };
 
@@ -49,11 +41,7 @@ export const forgotPassword = async (email) => {
     const response = await api.post('/auth/forgot-password', { email });
     return response;
   } catch (error) {
-    return {
-      success: false,
-      message: error.response?.data?.message || 'Failed to send password reset email.',
-      error: error.response?.data
-    };
+    throw error;
   }
 };
 
@@ -66,11 +54,7 @@ export const resetPassword = async (token, newPassword) => {
     });
     return response;
   } catch (error) {
-    return {
-      success: false,
-      message: error.response?.data?.message || 'Password reset failed.',
-      error: error.response?.data
-    };
+    throw error;
   }
 };
 
@@ -129,7 +113,7 @@ export const refreshToken = async () => {
     if (response.data.token) {
       const user = getCurrentUser();
       user.token = response.data.token;
-      localStorage.setItem('user', JSON.stringify(user));
+      setUserData(user);
     }
     return response.data;
   } catch (error) {

@@ -1,18 +1,43 @@
-/* Common Dashboard Styles */
+/* Team Member Dashboard Styles */
 .dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 2rem;
   padding: 1rem;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.dashboard-header h1 {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
+.header-content {
+  flex: 1;
+}
+
+.header-content h1 {
+  margin: 0;
+  font-size: 1.8rem;
   color: #333;
 }
 
-.dashboard-header p {
+.header-content p {
+  margin: 0.5rem 0 0;
   color: #666;
-  font-size: 1.1rem;
+}
+
+.logout-button {
+  padding: 0.5rem 1rem;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.logout-button:hover {
+  background-color: #c82333;
 }
 
 .dashboard-grid {
@@ -48,70 +73,71 @@
 
 .task-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 1rem;
   padding: 1rem;
   border-bottom: 1px solid #f0f0f0;
 }
 
+.task-status {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.task-status.in-progress {
+  background-color: #ffc107;
+}
+
+.task-status.pending {
+  background-color: #dc3545;
+}
+
+.task-status.completed {
+  background-color: #28a745;
+}
+
 .task-info h3 {
   margin: 0;
+  font-size: 1rem;
   color: #333;
 }
 
 .task-info p {
-  margin: 0.25rem 0 0;
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
   color: #666;
 }
 
-.task-status {
+.task-deadline {
   font-size: 0.8rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-}
-
-.task-status.in-progress {
-  background: #e3f2fd;
-  color: #1565c0;
-}
-
-.task-status.completed {
-  background: #e8f5e9;
-  color: #2e7d32;
-}
-
-.task-status.pending {
-  background: #fff3e0;
-  color: #ef6c00;
+  color: #666;
 }
 
 /* Project Progress Styles */
 .project-progress {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .progress-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 0.5rem 0;
 }
 
 .progress-label {
-  font-size: 0.9rem;
   color: #333;
 }
 
 .progress-value {
-  font-size: 1.1rem;
   font-weight: 500;
   color: #2196f3;
 }
 
-/* Deadline Styles */
+/* Deadline List Styles */
 .deadline-list {
   display: flex;
   flex-direction: column;
@@ -119,30 +145,20 @@
 }
 
 .deadline-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   padding: 1rem;
   border-bottom: 1px solid #f0f0f0;
 }
 
-.deadline-info h3 {
+.deadline-item h3 {
   margin: 0;
+  font-size: 1rem;
   color: #333;
 }
 
-.deadline-info p {
+.deadline-item p {
   margin: 0.25rem 0 0;
-  color: #666;
-}
-
-.deadline-date {
   font-size: 0.9rem;
   color: #666;
-}
-
-.deadline-date.urgent {
-  color: #f44336;
 }
 
 /* Action Button Styles */
@@ -176,12 +192,9 @@
   .task-item {
     flex-direction: column;
     align-items: flex-start;
-    gap: 1rem;
   }
 
-  .deadline-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
+  .task-status {
+    margin-bottom: 0.5rem;
   }
 } 

@@ -358,7 +358,7 @@ var {
 /* Remove default dfn styles */
 dfn {
   display: block;
-}
+  }
 
 /* Remove default abbr styles */
 abbr {
@@ -383,7 +383,7 @@ blockquote {
 /* Remove default address styles */
 address {
   display: block;
-}
+  }
 
 /* Remove default pre styles */
 pre {
@@ -433,7 +433,7 @@ q {
 /* Remove default blockquote styles */
 blockquote {
   display: block;
-}
+  }
 
 /* Remove default address styles */
 address {

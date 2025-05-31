@@ -3,13 +3,16 @@ import { useAuth } from '../../../hooks/useAuth';
 import './Dashboard.css';
 
 const SuperAdminDashboard = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
 
   return (
     <div className="super-admin-dashboard">
       <div className="dashboard-header">
-        <h1>Welcome, {user?.username}</h1>
-        <p>Super Admin Dashboard</p>
+        <div className="header-content">
+          <h1>Welcome, {user?.username || 'Super Admin'}</h1>
+          <p>Super Admin Dashboard</p>
+        </div>
+        <button className="logout-button" onClick={signOut}>Logout</button>
       </div>
 
       <div className="dashboard-grid">

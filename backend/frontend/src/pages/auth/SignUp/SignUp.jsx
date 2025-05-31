@@ -11,16 +11,20 @@ const SignUp = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const roles = [
+    { value: 'superAdmin', label: 'Super Admin' },
+    { value: 'tenantAdmin', label: 'Tenant Admin' },
+    { value: 'projectManager', label: 'Project Manager' },
+    { value: 'teamMember', label: 'Team Member' },
+    { value: 'client', label: 'Client' }
+  ];
+
   // Form validation
   const validate = (values) => {
     const errors = {};
 
-    if (!values.firstName) {
-      errors.firstName = 'First name is required';
-    }
-
-    if (!values.lastName) {
-      errors.lastName = 'Last name is required';
+    if (!values.username) {
+      errors.username = 'Username is required';
     }
 
     if (!values.email) {
@@ -31,10 +35,8 @@ const SignUp = () => {
 
     if (!values.password) {
       errors.password = 'Password is required';
-    } else if (values.password.length < 8) {
-      errors.password = 'Password must be at least 8 characters';
-    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(values.password)) {
-      errors.password = 'Password must contain at least one uppercase letter, one lowercase letter, and one number';
+    } else if (values.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
     }
 
     if (!values.confirmPassword) {
@@ -43,13 +45,28 @@ const SignUp = () => {
       errors.confirmPassword = 'Passwords do not match';
     }
 
+    if (!values.tenantId) {
+      errors.tenantId = 'Tenant ID is required';
+    }
+
+    if (!values.role) {
+      errors.role = 'Role is required';
+    }
+
     return errors;
   };
 
   // Form submission
   const handleSubmit = async (values) => {
     try {
-      await signUp(values);
+      const userData = {
+        username: values.username,
+        email: values.email,
+        password: values.password,
+        tenantId: values.tenantId,
+        roles: [values.role] // Use selected role
+      };
+      await signUp(userData);
     } catch (err) {
       // Error is handled by the auth context
       console.error('Sign up failed:', err);
@@ -65,11 +82,12 @@ const SignUp = () => {
     isSubmitting
   } = useForm(
     {
-      firstName: '',
-      lastName: '',
+      username: '',
       email: '',
       password: '',
-      confirmPassword: ''
+      confirmPassword: '',
+      tenantId: '',
+      role: 'teamMember' // Default role
     },
     validate,
     handleSubmit
@@ -84,35 +102,19 @@ const SignUp = () => {
         </p>
 
         <form onSubmit={submitForm} className="signup-form">
-          <div className="signup-name-fields">
-            <Input
-              type="text"
-              name="firstName"
-              label="First Name"
-              value={values.firstName}
-              placeholder="Enter your first name"
-              error={errors.firstName}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              required
-              size="medium"
-              fullWidth
-            />
-
-            <Input
-              type="text"
-              name="lastName"
-              label="Last Name"
-              value={values.lastName}
-              placeholder="Enter your last name"
-              error={errors.lastName}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              required
-              size="medium"
-              fullWidth
-            />
-          </div>
+          <Input
+            type="text"
+            name="username"
+            label="Username"
+            value={values.username}
+            placeholder="Enter your username"
+            error={errors.username}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            required
+            size="medium"
+            fullWidth
+          />
 
           <Input
             type="email"
@@ -127,6 +129,40 @@ const SignUp = () => {
             size="medium"
             fullWidth
           />
+
+          <Input
+            type="text"
+            name="tenantId"
+            label="Tenant ID"
+            value={values.tenantId}
+            placeholder="Enter your tenant ID"
+            error={errors.tenantId}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            required
+            size="medium"
+            fullWidth
+          />
+
+          <div className="form-group">
+            <label htmlFor="role" className="form-label">Role</label>
+            <select
+              id="role"
+              name="role"
+              value={values.role}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className={`form-select ${errors.role ? 'is-invalid' : ''}`}
+              required
+            >
+              {roles.map((role) => (
+                <option key={role.value} value={role.value}>
+                  {role.label}
+                </option>
+              ))}
+            </select>
+            {errors.role && <div className="invalid-feedback">{errors.role}</div>}
+          </div>
 
           <Input
             type={showPassword ? 'text' : 'password'}
@@ -186,7 +222,7 @@ const SignUp = () => {
             loading={loading || isSubmitting}
             disabled={loading || isSubmitting}
           >
-            Create Account
+            Sign Up
           </Button>
         </form>
 
