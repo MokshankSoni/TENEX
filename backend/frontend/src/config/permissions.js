@@ -1,0 +1,78 @@
+// Permission configuration for different user roles
+export const PERMISSIONS = {
+  // Super Admin permissions
+  SUPER_ADMIN: {
+    MANAGE_TENANTS: 'manage_tenants',
+    MANAGE_PLATFORM: 'manage_platform',
+    VIEW_SYSTEM_METRICS: 'view_system_metrics',
+    MANAGE_USERS: 'manage_users',
+  },
+
+  // Tenant Admin permissions
+  TENANT_ADMIN: {
+    MANAGE_PROJECTS: 'manage_projects',
+    MANAGE_TENANT_USERS: 'manage_tenant_users',
+    VIEW_ANALYTICS: 'view_analytics',
+    MANAGE_TENANT_SETTINGS: 'manage_tenant_settings',
+    VIEW_ACTIVITY_LOGS: 'view_activity_logs',
+  },
+
+  // Project Manager permissions
+  PROJECT_MANAGER: {
+    MANAGE_TASKS: 'manage_tasks',
+    ASSIGN_TASKS: 'assign_tasks',
+    VIEW_TEAM_METRICS: 'view_team_metrics',
+    MANAGE_MILESTONES: 'manage_milestones',
+    GENERATE_REPORTS: 'generate_reports',
+  },
+
+  // Team Member permissions
+  TEAM_MEMBER: {
+    VIEW_TASKS: 'view_tasks',
+    UPDATE_TASK_STATUS: 'update_task_status',
+    ADD_COMMENTS: 'add_comments',
+    UPLOAD_ATTACHMENTS: 'upload_attachments',
+  },
+
+  // Client permissions
+  CLIENT: {
+    VIEW_PROJECTS: 'view_projects',
+    VIEW_TASKS: 'view_tasks',
+    RECEIVE_UPDATES: 'receive_updates',
+  },
+};
+
+// Role-based access control configuration
+export const ROLE_PERMISSIONS = {
+  SUPER_ADMIN: [
+    PERMISSIONS.SUPER_ADMIN.MANAGE_TENANTS,
+    PERMISSIONS.SUPER_ADMIN.MANAGE_PLATFORM,
+    PERMISSIONS.SUPER_ADMIN.VIEW_SYSTEM_METRICS,
+    PERMISSIONS.SUPER_ADMIN.MANAGE_USERS,
+  ],
+  TENANT_ADMIN: [
+    PERMISSIONS.TENANT_ADMIN.MANAGE_PROJECTS,
+    PERMISSIONS.TENANT_ADMIN.MANAGE_TENANT_USERS,
+    PERMISSIONS.TENANT_ADMIN.VIEW_ANALYTICS,
+    PERMISSIONS.TENANT_ADMIN.MANAGE_TENANT_SETTINGS,
+    PERMISSIONS.TENANT_ADMIN.VIEW_ACTIVITY_LOGS,
+  ],
+  PROJECT_MANAGER: [
+    PERMISSIONS.PROJECT_MANAGER.MANAGE_TASKS,
+    PERMISSIONS.PROJECT_MANAGER.ASSIGN_TASKS,
+    PERMISSIONS.PROJECT_MANAGER.VIEW_TEAM_METRICS,
+    PERMISSIONS.PROJECT_MANAGER.MANAGE_MILESTONES,
+    PERMISSIONS.PROJECT_MANAGER.GENERATE_REPORTS,
+  ],
+  TEAM_MEMBER: [
+    PERMISSIONS.TEAM_MEMBER.VIEW_TASKS,
+    PERMISSIONS.TEAM_MEMBER.UPDATE_TASK_STATUS,
+    PERMISSIONS.TEAM_MEMBER.ADD_COMMENTS,
+    PERMISSIONS.TEAM_MEMBER.UPLOAD_ATTACHMENTS,
+  ],
+  CLIENT: [
+    PERMISSIONS.CLIENT.VIEW_PROJECTS,
+    PERMISSIONS.CLIENT.VIEW_TASKS,
+    PERMISSIONS.CLIENT.RECEIVE_UPDATES,
+  ],
+}; 
