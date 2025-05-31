@@ -1,0 +1,121 @@
+/* src/pages/auth/SignUp/SignUp.css */
+
+.signup-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: var(--spacing-4);
+  background-color: var(--color-background-alt);
+}
+
+.signup-content {
+  width: 100%;
+  max-width: 500px;
+  padding: var(--spacing-8);
+  background-color: var(--color-background);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.signup-title {
+  margin-bottom: var(--spacing-2);
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-dark);
+  text-align: center;
+}
+
+.signup-subtitle {
+  margin-bottom: var(--spacing-6);
+  font-size: var(--font-size-base);
+  color: var(--color-text-light);
+  text-align: center;
+}
+
+.signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.signup-name-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-4);
+}
+
+.signup-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-4);
+}
+
+.signup-show-password,
+.signup-show-confirm-password {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-light);
+  cursor: pointer;
+}
+
+.signup-show-password input[type="checkbox"],
+.signup-show-confirm-password input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.signup-error {
+  padding: var(--spacing-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-error);
+  background-color: var(--color-error-light);
+  border-radius: var(--border-radius-md);
+  text-align: center;
+}
+
+.signup-footer {
+  margin-top: var(--spacing-6);
+  padding-top: var(--spacing-4);
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-light);
+}
+
+.signup-link {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+  transition: color var(--transition-duration-fast) var(--transition-timing-function);
+}
+
+.signup-link:hover {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+}
+
+/* Responsive styles */
+@media (max-width: 640px) {
+  .signup-content {
+    padding: var(--spacing-6);
+  }
+
+  .signup-title {
+    font-size: var(--font-size-xl);
+  }
+
+  .signup-subtitle {
+    font-size: var(--font-size-sm);
+  }
+
+  .signup-name-fields {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-4);
+  }
+} 
