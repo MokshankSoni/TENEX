@@ -1,101 +1,160 @@
 import React from 'react';
 import { useAuth } from '../../../hooks/useAuth';
+import { FaProjectDiagram, FaUsers, FaTasks, FaChartPie, FaPlus, FaUserPlus, FaClipboardList, FaUserCircle } from 'react-icons/fa';
 import './Dashboard.css';
 
 const TenantAdminDashboard = () => {
   const { user, signOut } = useAuth();
 
+  // Temporary hardcoded data
+  const dashboardData = {
+    totalProjects: 42,
+    activeProjects: 30,
+    completedProjects: 12,
+    totalUsers: 120,
+    userBreakdown: {
+      projectManagers: 15,
+      teamMembers: 85,
+      clients: 20
+    },
+    openTasks: 185,
+    overdueTasks: 25,
+    dueThisWeek: 45,
+    projectStatus: [
+      { status: 'Completed', count: 12, color: '#4CAF50' },
+      { status: 'In Progress', count: 30, color: '#2196F3' }
+    ],
+    recentActivity: [
+      { user: 'John D.', action: 'created Project "New Marketing Initiative"', time: '5 mins ago' },
+      { user: 'Sarah M.', action: 'updated Task "Website Redesign"', time: '15 mins ago' },
+      { user: 'Mike R.', action: 'added new team member', time: '1 hour ago' },
+      { user: 'Lisa K.', action: 'completed milestone "Phase 1"', time: '2 hours ago' },
+      { user: 'David P.', action: 'uploaded project documents', time: '3 hours ago' }
+    ]
+  };
+
+  const handleProfileClick = () => {
+    // This function will be implemented later for profile details
+    console.log('Profile clicked');
+  };
+
   return (
     <div className="dashboard-container">
+      {/* Top Navigation Bar */}
       <div className="dashboard-header">
-        <div className="header-content">
-          <h1>Welcome, {user?.username || 'Tenant Admin'}</h1>
-          <p>Here's an overview of your tenant</p>
+        <div className="header-left">
+          <h1>Dashboard</h1>
         </div>
-        <button className="logout-button" onClick={signOut}>
-          Logout
-        </button>
+        <div className="header-right">
+          <div className="user-info">
+            <span className="user-role">Tenant Admin</span>
+            <span className="user-name">{user?.username || 'John Smith'}</span>
+          </div>
+          <div className="profile-icon" onClick={handleProfileClick}>
+            <FaUserCircle size={32} />
+          </div>
+          <button className="logout-button" onClick={signOut}>
+            Logout
+          </button>
+        </div>
       </div>
-      
-      <div className="dashboard-grid">
-        {/* Tenant Overview */}
-        <div className="dashboard-card">
-          <h2>Tenant Overview</h2>
-          <div className="tenant-stats">
-            <div className="stat-item">
-              <span className="stat-label">Total Users</span>
-              <span className="stat-value">150</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Active Projects</span>
-              <span className="stat-value">12</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">System Uptime</span>
-              <span className="stat-value">99.9%</span>
-            </div>
-          </div>
-        </div>
 
-        {/* User Management */}
-        <div className="dashboard-card">
-          <h2>User Management</h2>
-          <div className="user-stats">
-            <div className="user-stat-item">
-              <h3>Active Users</h3>
-              <div className="user-metrics">
-                <span className="user-value">120</span>
-                <span className="user-label">out of 150</span>
+      {/* Main Dashboard Content */}
+      <div className="dashboard-content">
+        {/* Row 1: Key Performance Indicators */}
+        <div className="kpi-row">
+          <div className="kpi-card" onClick={() => window.location.href = '/projects'}>
+            <div className="kpi-icon">
+              <FaProjectDiagram />
+            </div>
+            <div className="kpi-content">
+              <h3>Projects</h3>
+              <div className="kpi-value">{dashboardData.totalProjects}</div>
+              <div className="kpi-subtext">
+                {dashboardData.activeProjects} Active / {dashboardData.completedProjects} Completed
               </div>
             </div>
-            <div className="user-stat-item">
-              <h3>User Roles</h3>
-              <div className="role-list">
-                <div className="role-item">
-                  <span className="role-name">Project Managers</span>
-                  <span className="role-count">15</span>
-                </div>
-                <div className="role-item">
-                  <span className="role-name">Team Members</span>
-                  <span className="role-count">85</span>
-                </div>
-                <div className="role-item">
-                  <span className="role-name">Clients</span>
-                  <span className="role-count">20</span>
-                </div>
+          </div>
+
+          <div className="kpi-card" onClick={() => window.location.href = '/users'}>
+            <div className="kpi-icon">
+              <FaUsers />
+            </div>
+            <div className="kpi-content">
+              <h3>Users</h3>
+              <div className="kpi-value">{dashboardData.totalUsers}</div>
+              <div className="kpi-subtext">
+                {dashboardData.userBreakdown.projectManagers} PMs, {dashboardData.userBreakdown.teamMembers} TMs, {dashboardData.userBreakdown.clients} Clients
+              </div>
+            </div>
+          </div>
+
+          <div className="kpi-card" onClick={() => window.location.href = '/tasks'}>
+            <div className="kpi-icon">
+              <FaTasks />
+            </div>
+            <div className="kpi-content">
+              <h3>Open Tasks</h3>
+              <div className="kpi-value">{dashboardData.openTasks}</div>
+              <div className="kpi-subtext">
+                <span className="overdue">{dashboardData.overdueTasks} Overdue</span> / {dashboardData.dueThisWeek} Due This Week
               </div>
             </div>
           </div>
         </div>
 
-        {/* System Health */}
-        <div className="dashboard-card">
-          <h2>System Health</h2>
-          <div className="health-metrics">
-            <div className="health-item">
-              <h3>Server Status</h3>
-              <span className="status-indicator online">Online</span>
-            </div>
-            <div className="health-item">
-              <h3>Storage Usage</h3>
-              <div className="usage-bar">
-                <div className="usage-progress" style={{ width: '65%' }}></div>
+        {/* Row 2: Project Status Chart and Quick Actions */}
+        <div className="middle-row">
+          <div className="chart-card">
+            <h3>Project Status Overview</h3>
+            <div className="chart-container">
+              <div className="chart-placeholder">
+                <FaChartPie size={48} />
+                <div className="chart-legend">
+                  <div className="legend-item">
+                    <span className="legend-color" style={{ backgroundColor: '#4CAF50' }}></span>
+                    <span className="legend-label">Completed ({dashboardData.completedProjects})</span>
+                  </div>
+                  <div className="legend-item">
+                    <span className="legend-color" style={{ backgroundColor: '#2196F3' }}></span>
+                    <span className="legend-label">In Progress ({dashboardData.activeProjects})</span>
+                  </div>
+                </div>
               </div>
-              <span className="usage-value">65% Used</span>
             </div>
-            <div className="health-item">
-              <h3>API Response Time</h3>
-              <span className="response-time">45ms</span>
+          </div>
+
+          <div className="quick-actions-card">
+            <h3>Quick Actions</h3>
+            <div className="quick-actions">
+              <button className="action-button primary">
+                <FaPlus /> Project
+              </button>
+              <button className="action-button">
+                <FaUserPlus /> Add New User
+              </button>
+              <button className="action-button">
+                <FaClipboardList /> View All Assignments
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="dashboard-card">
-          <h2>Quick Actions</h2>
-          <button className="action-button">Manage Users</button>
-          <button className="action-button">Configure Settings</button>
-          <button className="action-button">View Analytics</button>
+        {/* Row 3: Recent Activity */}
+        <div className="activity-card">
+          <h3>Recent Activity</h3>
+          <div className="activity-list">
+            {dashboardData.recentActivity.map((activity, index) => (
+              <div key={index} className="activity-item">
+                <div className="activity-content">
+                  <span className="activity-user">{activity.user}</span>
+                  <span className="activity-action">{activity.action}</span>
+                  <span className="activity-time">{activity.time}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <button className="view-all-button">View All Activity</button>
         </div>
       </div>
     </div>
