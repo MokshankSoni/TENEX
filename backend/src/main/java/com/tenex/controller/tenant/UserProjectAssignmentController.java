@@ -13,7 +13,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/assignments")
-@CrossOrigin(origins = "*", maxAge = 3600)
 public class UserProjectAssignmentController {
 
     @Autowired

@@ -86,10 +86,8 @@ export const useAuth = () => {
   }, [navigate]);
 
   const signOut = useCallback(() => {
-    removeToken();
-    setUser(null);
-    navigate('/signin');
-  }, [navigate]);
+    logout(); // Use the proper logout function that clears all data
+  }, []);
 
   return {
     user,

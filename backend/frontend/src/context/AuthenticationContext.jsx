@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { AUTH_ENDPOINTS } from '../config/apiEndpoints';
 import { getDashboardRoute } from '../utils/roleUtils';
 import useLocalStorage from '../hooks/useLocalStorage';
+import { logout } from '../services/authService';
 
 // Create context
 export const AuthContext = createContext(null);
@@ -55,10 +56,8 @@ export const AuthProvider = ({ children }) => {
 
   // Sign out
   const signOut = useCallback(() => {
-    setUser(null);
-    setToken(null);
-    navigate('/signin');
-  }, [navigate]);
+    logout();
+  }, []);
 
   // Sign up
   const signUp = useCallback(async (userData) => {

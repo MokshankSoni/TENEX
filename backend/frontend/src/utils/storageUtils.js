@@ -2,6 +2,7 @@
 
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'user_data';
+const TENANT_ID_KEY = 'tenant_id';
 
 // Token management
 export const setToken = (token) => {
@@ -22,12 +23,25 @@ export const setUserData = (userData) => {
 };
 
 export const getUserData = () => {
-  const userData = localStorage.getItem(USER_KEY);
-  return userData ? JSON.parse(userData) : null;
+  const data = localStorage.getItem(USER_KEY);
+  return data ? JSON.parse(data) : null;
 };
 
 export const removeUserData = () => {
   localStorage.removeItem(USER_KEY);
+};
+
+// Tenant ID management
+export const setTenantId = (tenantId) => {
+  localStorage.setItem(TENANT_ID_KEY, tenantId);
+};
+
+export const getTenantId = () => {
+  return localStorage.getItem(TENANT_ID_KEY);
+};
+
+export const removeTenantId = () => {
+  localStorage.removeItem(TENANT_ID_KEY);
 };
 
 // Tenant data management
@@ -51,9 +65,14 @@ export const removeTenantData = () => {
 
 // Clear all stored data
 export const clearAllData = () => {
+  // Clear localStorage items
   removeToken();
   removeUserData();
+  removeTenantId();
   removeTenantData();
+  
+  // Clear sessionStorage
+  clearSessionData();
 };
 
 // Session storage utilities (for temporary data)

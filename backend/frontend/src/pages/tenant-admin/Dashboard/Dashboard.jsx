@@ -1,9 +1,11 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import { FaProjectDiagram, FaUsers, FaTasks, FaChartPie, FaPlus, FaUserPlus, FaClipboardList, FaUserCircle } from 'react-icons/fa';
 import './Dashboard.css';
 
 const TenantAdminDashboard = () => {
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
 
   // Temporary hardcoded data
@@ -127,7 +129,10 @@ const TenantAdminDashboard = () => {
           <div className="quick-actions-card">
             <h3>Quick Actions</h3>
             <div className="quick-actions">
-              <button className="action-button primary">
+              <button 
+                className="action-button primary"
+                onClick={() => navigate('/tenant-admin/create-project')}
+              >
                 <FaPlus /> Project
               </button>
               <button className="action-button">

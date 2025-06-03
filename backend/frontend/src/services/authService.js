@@ -1,14 +1,22 @@
 // src/services/authService.js
 import api from './api';
-import { setToken, removeToken, setUserData, removeUserData } from '../utils/storageUtils';
+import { setToken, removeToken, setUserData, removeUserData, setTenantId, removeTenantId, getToken, getTenantId, clearAllData } from '../utils/storageUtils';
 import { AUTH_ENDPOINTS } from '../config/apiEndpoints';
 
 // Sign in user
 export const login = async (credentials) => {
   try {
     const response = await api.post('/auth/signin', credentials);
+    console.log('Login Response:', response.data); // Log full response
+
     if (response.data.token) {
+      // Store token and tenant ID
       setToken(response.data.token);
+      if (response.data.tenantId) {
+        setTenantId(response.data.tenantId);
+      }
+      
+      // Store user data
       setUserData({
         id: response.data.id,
         username: response.data.username,
@@ -17,10 +25,19 @@ export const login = async (credentials) => {
         roles: response.data.roles,
         token: response.data.token
       });
+
+      // Verify storage
+      const storedToken = getToken();
+      const storedTenantId = getTenantId();
+      console.log('Verification after storage:');
+      console.log('Stored Token:', storedToken);
+      console.log('Stored Tenant ID:', storedTenantId);
+      
       return response;
     }
     throw new Error('No token received from server');
   } catch (error) {
+    console.error('Login Error:', error);
     throw error;
   }
 };
@@ -59,15 +76,18 @@ export const resetPassword = async (token, newPassword) => {
 };
 
 // Logout user
-export const logout = async () => {
-  try {
-    const response = await api.post('/auth/signout');
-    removeToken();
-    removeUserData();
-    return response;
-  } catch (error) {
-    throw error;
+export const logout = () => {
+  // Clear all stored data
+  clearAllData();
+  
+  // Clear any remaining headers in the API instance
+  if (api.defaults.headers) {
+    delete api.defaults.headers['Authorization'];
+    delete api.defaults.headers['X-TenantID'];
   }
+  
+  // Force reload to clear any cached state
+  window.location.href = '/signin';
 };
 
 // Get current user data
@@ -98,12 +118,6 @@ export const getDashboardRoute = () => {
   };
 
   return roleRoutes[role] || '/unauthorized';
-};
-
-// Get token
-export const getToken = () => {
-  const user = getCurrentUser();
-  return user?.token;
 };
 
 // Refresh token
