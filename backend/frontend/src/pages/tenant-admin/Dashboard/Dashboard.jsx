@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import { FaProjectDiagram, FaUsers, FaTasks, FaChartPie, FaPlus, FaUserPlus, FaClipboardList, FaUserCircle } from 'react-icons/fa';
+import ProjectPopup from '../ProjectPopup/ProjectPopup';
 import './Dashboard.css';
 
 const TenantAdminDashboard = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const [isProjectPopupOpen, setIsProjectPopupOpen] = useState(false);
 
   // Temporary hardcoded data
   const dashboardData = {
@@ -65,7 +67,7 @@ const TenantAdminDashboard = () => {
       <div className="dashboard-content">
         {/* Row 1: Key Performance Indicators */}
         <div className="kpi-row">
-          <div className="kpi-card" onClick={() => window.location.href = '/projects'}>
+          <div className="kpi-card" onClick={() => setIsProjectPopupOpen(true)}>
             <div className="kpi-icon">
               <FaProjectDiagram />
             </div>
@@ -154,14 +156,19 @@ const TenantAdminDashboard = () => {
                 <div className="activity-content">
                   <span className="activity-user">{activity.user}</span>
                   <span className="activity-action">{activity.action}</span>
-                  <span className="activity-time">{activity.time}</span>
                 </div>
+                <span className="activity-time">{activity.time}</span>
               </div>
             ))}
           </div>
           <button className="view-all-button">View All Activity</button>
         </div>
       </div>
+
+      <ProjectPopup 
+        isOpen={isProjectPopupOpen} 
+        onClose={() => setIsProjectPopupOpen(false)} 
+      />
     </div>
   );
 };

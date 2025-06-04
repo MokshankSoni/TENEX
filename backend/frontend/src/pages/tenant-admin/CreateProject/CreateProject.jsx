@@ -161,7 +161,7 @@ const CreateProject = () => {
               className="form-select"
             >
               <option value="ON_HOLD">On Hold</option>
-              <option value="IN_PROGRESS">In Progress</option>
+              <option value="ACTIVE">Active</option>
               <option value="COMPLETED">Completed</option>
               <option value="CANCELLED">Cancelled</option>
             </select>

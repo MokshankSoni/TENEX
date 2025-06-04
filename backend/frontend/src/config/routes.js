@@ -25,6 +25,7 @@ import ProjectManagerDashboard from '../pages/project-manager/Dashboard/Dashboar
 // Tenant Admin routes
 import TenantAdminDashboard from '../pages/tenant-admin/Dashboard/Dashboard';
 import CreateProject from '../pages/tenant-admin/CreateProject/CreateProject';
+import ProjectDashboard from '../pages/tenant-admin/ProjectDashboard/ProjectDashboard';
 
 // Super Admin routes
 import SuperAdminDashboard from '../pages/super-admin/Dashboard/Dashboard';
@@ -78,6 +79,11 @@ export const routes = [
     path: '/tenant-admin/create-project',
     element: CreateProject,
     title: 'Create Project'
+  },
+  {
+    path: '/tenant-admin/project/:projectId',
+    element: ProjectDashboard,
+    title: 'Project Dashboard'
   },
   {
     path: '/super-admin/dashboard',
