@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { FaProjectDiagram, FaUsers, FaTasks, FaChartPie, FaPlus, FaUserPlus, FaClipboardList, FaUserCircle, FaPaperclip, FaFlag, FaEye, FaArrowLeft, FaTimes } from 'react-icons/fa';
 import axios from 'axios';
 import { PROJECT_ENDPOINTS } from '../../../config/apiEndpoints';
+import { useAuth } from '../../../hooks/useAuth';
+import { getToken, getTenantId } from '../../../utils/storageUtils';
 import './ProjectDashboard.css';
 
 const ProjectDashboard = () => {
   const navigate = useNavigate();
   const { projectId } = useParams();
-  const location = useLocation();
-  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isTasksPopupOpen, setIsTasksPopupOpen] = useState(false);
   const [projectData, setProjectData] = useState({
@@ -27,32 +29,37 @@ const ProjectDashboard = () => {
   });
 
   useEffect(() => {
-    // Use project data from navigation state if available
-    if (location.state?.projectData) {
-      const project = location.state.projectData;
-      setProjectData({
-        name: project.name,
-        tenantName: project.tenantName,
-        status: project.status,
-        startDate: project.startDate,
-        endDate: project.endDate,
-        description: project.description,
-        tasks: project.tasks || [],
-        milestones: project.milestones || [],
-        teamMembers: project.teamMembers || [],
-        attachments: project.attachments || [],
-        userAssignments: project.userAssignments || []
-      });
-    } else {
-      // Fallback to fetching project data if not available in state
-      fetchProjectDetails();
-    }
-  }, [projectId, location.state]);
+    fetchProjectDetails();
+  }, [projectId]);
 
   const fetchProjectDetails = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(PROJECT_ENDPOINTS.GET_PROJECT(projectId));
+      setError(null);
+      
+      const token = getToken();
+      const tenantId = getTenantId();
+      
+      if (!token) {
+        setError('Authentication token not found. Please login again.');
+        navigate('/signin');
+        return;
+      }
+
+      if (!tenantId) {
+        setError('Tenant ID not found. Please login again.');
+        navigate('/signin');
+        return;
+      }
+
+      const response = await axios.get(PROJECT_ENDPOINTS.GET_PROJECT(projectId), {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'X-TenantID': tenantId
+        }
+      });
+
       const project = response.data;
       
       setProjectData({
@@ -69,8 +76,15 @@ const ProjectDashboard = () => {
         userAssignments: project.userAssignments || []
       });
     } catch (err) {
-      setError('Failed to fetch project details');
       console.error('Error fetching project details:', err);
+      if (err.response?.status === 401) {
+        setError('Session expired. Please login again.');
+        navigate('/signin');
+      } else if (err.response?.status === 403) {
+        setError('You do not have permission to access this project.');
+      } else {
+        setError('Failed to fetch project details. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -78,16 +92,27 @@ const ProjectDashboard = () => {
 
   const handleStatusChange = async (newStatus) => {
     try {
-      await axios.patch(PROJECT_ENDPOINTS.UPDATE_PROJECT(projectId), {
-        status: newStatus
-      });
+      const token = getToken();
+      const tenantId = getTenantId();
+
+      await axios.patch(PROJECT_ENDPOINTS.UPDATE_PROJECT(projectId), 
+        { status: newStatus },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'X-TenantID': tenantId
+          }
+        }
+      );
+      
       setProjectData(prev => ({
         ...prev,
         status: newStatus
       }));
     } catch (err) {
       console.error('Error updating project status:', err);
-      // You might want to show an error message to the user here
+      setError('Failed to update project status. Please try again.');
     }
   };
 
@@ -118,22 +143,18 @@ const ProjectDashboard = () => {
 
   if (loading) {
     return (
-      <div className="project-dashboard-container">
-        <div className="loading-state">
-          <div className="loading-spinner"></div>
-          <p>Loading project details...</p>
-        </div>
+      <div className="loading-state">
+        <div className="loading-spinner"></div>
+        <p>Loading project details...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="project-dashboard-container">
-        <div className="error-state">
-          <p>{error}</p>
-          <button onClick={() => navigate(-1)}>Go Back</button>
-        </div>
+      <div className="error-state">
+        <p>{error}</p>
+        <button onClick={fetchProjectDetails}>Try Again</button>
       </div>
     );
   }
@@ -145,12 +166,18 @@ const ProjectDashboard = () => {
         <div className="header-left">
           <h1>{projectData.name}</h1>
           <div className="project-meta">
-            <span className="tenant-name">{projectData.tenantName}</span>
             <div 
               className="status-badge" 
-              onClick={() => handleStatusChange(projectData.status === 'In Progress' ? 'Completed' : 'In Progress')}
+              style={{ 
+                backgroundColor: projectData.status === 'Active' ? '#e6f4ea' : '#fce8e6',
+                color: projectData.status === 'Active' ? '#1e7e34' : '#d32f2f'
+              }}
             >
               {projectData.status}
+            </div>
+            <div className="date-range">
+              <span>Start: {new Date(projectData.startDate).toLocaleDateString()}</span>
+              <span>End: {new Date(projectData.endDate).toLocaleDateString()}</span>
             </div>
           </div>
         </div>
@@ -162,10 +189,6 @@ const ProjectDashboard = () => {
           >
             <FaArrowLeft />
           </button>
-          <div className="date-range">
-            <span>Start: {new Date(projectData.startDate).toLocaleDateString()}</span>
-            <span>End: {new Date(projectData.endDate).toLocaleDateString()}</span>
-          </div>
         </div>
       </div>
 
