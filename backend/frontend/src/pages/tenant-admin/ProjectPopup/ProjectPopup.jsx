@@ -30,8 +30,8 @@ const ProjectPopup = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleProjectClick = (projectId) => {
-    navigate(`/tenant-admin/project/${projectId}`);
+  const handleProjectClick = (project) => {
+    navigate(`/tenant-admin/project/${project.id}`, { state: { projectData: project } });
     onClose();
   };
 
@@ -55,7 +55,7 @@ const ProjectPopup = ({ isOpen, onClose }) => {
               <div 
                 key={project.id} 
                 className="project-card"
-                onClick={() => handleProjectClick(project.id)}
+                onClick={() => handleProjectClick(project)}
               >
                 <h3>{project.name}</h3>
                 <p>{project.description}</p>
