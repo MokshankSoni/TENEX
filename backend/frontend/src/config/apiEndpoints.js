@@ -34,7 +34,9 @@ export const PROJECT_ENDPOINTS = {
   GET_PROJECT_MEMBERS: (id) => `${BASE_URL}/projects/${id}/members`,
   ADD_PROJECT_MEMBER: (id) => `${BASE_URL}/projects/${id}/members`,
   REMOVE_PROJECT_MEMBER: (projectId, userId) => 
-    `${BASE_URL}/projects/${projectId}/members/${userId}`
+    `${BASE_URL}/projects/${projectId}/members/${userId}`,
+  GET_PROJECT_MILESTONES: (id) => `${BASE_URL}/milestones/project/${id}`,
+  CREATE_MILESTONE: `${BASE_URL}/milestones`
 };
 
 // Task endpoints

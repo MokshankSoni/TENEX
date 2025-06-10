@@ -262,6 +262,34 @@ public class AttachmentService {
         return Optional.empty();
     }
 
+    @Transactional(value = "tenantTransactionManager", readOnly = true)
+    public InputStream getAttachmentStream(Long attachmentId) {
+        if (!authorizationService.canDownloadAttachment()) {
+            throw new AccessDeniedException("You don't have permission to download attachments");
+        }
+
+        Attachment attachment = attachmentRepository.findById(attachmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Attachment not found with ID: " + attachmentId));
+
+        String currentTenant = TenantContext.getCurrentTenant();
+        if (!attachment.getFileUrl().startsWith(currentTenant + "/")) {
+            logger.warn("Attempt to access attachment {} with key {} by unauthorized tenant {}",
+                    attachmentId, attachment.getFileUrl(), currentTenant);
+            throw new ResourceNotFoundException("Attachment not found with ID: " + attachmentId);
+        }
+
+        try {
+            return minioClient.getObject(
+                    GetObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(attachment.getFileUrl())
+                            .build());
+        } catch (Exception e) {
+            logger.error("Error getting attachment stream for attachment {}", attachmentId, e);
+            throw new RuntimeException("Failed to get attachment stream", e);
+        }
+    }
+
     private String getFileExtension(String filename) {
         int dotIndex = filename.lastIndexOf('.');
         return (dotIndex == -1 || dotIndex == filename.length() - 1) ? "" : filename.substring(dotIndex + 1);

@@ -6,10 +6,14 @@ import com.tenex.exception.ResourceNotFoundException;
 import com.tenex.exception.ValidationException;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
 import java.util.Optional;
 
 @RestController
@@ -40,12 +44,24 @@ public class AttachmentController {
     }
 
     @GetMapping("/{attachmentId}/download")
-    public ResponseEntity<AttachmentDTO> getAttachmentWithDownloadUrl(@PathVariable Long attachmentId) {
+    public ResponseEntity<InputStreamResource> downloadAttachment(@PathVariable Long attachmentId) {
         try {
-            AttachmentDTO attachment = attachmentService.getAttachmentWithDownloadUrl(attachmentId);
-            return ResponseEntity.ok(attachment);
+            AttachmentDTO attachment = attachmentService.getAttachmentById(attachmentId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Attachment not found with ID: " + attachmentId));
+
+            InputStream fileStream = attachmentService.getAttachmentStream(attachmentId);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(attachment.getFileType()));
+            headers.setContentDispositionFormData("attachment", attachment.getFileName());
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(new InputStreamResource(fileStream));
         } catch (ResourceNotFoundException e) {
             return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
         }
     }
 

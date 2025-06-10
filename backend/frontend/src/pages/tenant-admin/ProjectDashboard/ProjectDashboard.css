@@ -305,6 +305,30 @@
   color: #718096;
 }
 
+.milestone-description {
+  margin: 0.5rem 0;
+  color: #4a5568;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-badge.completed {
+  background-color: #e6f4ea;
+  color: #1e7e34;
+}
+
+.status-badge.pending {
+  background-color: #fff3e0;
+  color: #f57c00;
+}
+
 /* Team Section */
 .team-section {
   background: #ffffff;
@@ -668,12 +692,15 @@
   align-items: center;
   padding: 1.5rem;
   border-bottom: 1px solid #e6f0ff;
+  background-color: #ffffff;
+  border-radius: 12px 12px 0 0;
 }
 
 .popup-header h2 {
   margin: 0;
   color: #1a365d;
   font-size: 1.5rem;
+  font-weight: 600;
 }
 
 .close-button {
@@ -726,4 +753,258 @@
   gap: 1rem;
   max-height: 400px;
   overflow-y: auto;
+}
+
+.popup-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.role-filter {
+  padding: 0.5rem 1rem;
+  border: 1px solid #e6f0ff;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #1a365d;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.role-filter:hover {
+  border-color: #4a90e2;
+}
+
+.role-filter:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+/* Role-specific status badge styles */
+.status-badge.project-manager {
+  background-color: #e6f4ea;
+  color: #34a853;
+}
+
+.status-badge.admin {
+  background-color: #e8f0fe;
+  color: #1a73e8;
+}
+
+.status-badge.tm {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+/* Form Popup Styles */
+.form-popup {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.milestone-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-weight: 500;
+  color: #2d3748;
+  font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group textarea {
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.toggle-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #4a90e2;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+.toggle-button:hover {
+  color: #357abd;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.cancel-button {
+  padding: 0.75rem 1.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: white;
+  color: #4a5568;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-button:hover {
+  background: #f7fafc;
+  border-color: #cbd5e0;
+}
+
+.submit-button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  background: #4a90e2;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submit-button:hover {
+  background: #357abd;
+}
+
+/* Task Selection Button */
+.task-select-button {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #2d3748;
+  font-size: 0.95rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.task-select-button:hover {
+  border-color: #4a90e2;
+  background-color: #f8fafc;
+}
+
+/* File Input Styling */
+input[type="file"] {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #2d3748;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+input[type="file"]:hover {
+  border-color: #4a90e2;
+}
+
+input[type="file"]::-webkit-file-upload-button {
+  padding: 0.5rem 1rem;
+  margin-right: 1rem;
+  border: none;
+  border-radius: 4px;
+  background-color: #4a90e2;
+  color: white;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+input[type="file"]::-webkit-file-upload-button:hover {
+  background-color: #357abd;
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.cancel-button {
+  padding: 0.75rem 1.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #4a5568;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-button:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e0;
+}
+
+.submit-button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  background-color: #4a90e2;
+  color: white;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.submit-button:hover:not(:disabled) {
+  background-color: #357abd;
+}
+
+.submit-button:disabled {
+  background-color: #cbd5e0;
+  cursor: not-allowed;
+}
+
+/* Task Selection Popup */
+.tasks-popup .task-card {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tasks-popup .task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 } 
