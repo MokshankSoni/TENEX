@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaProjectDiagram, FaUsers, FaTasks, FaChartPie, FaPlus, FaUserPlus, FaClipboardList, FaUserCircle, FaPaperclip, FaFlag, FaEye, FaArrowLeft, FaTimes, FaToggleOn, FaToggleOff, FaUpload } from 'react-icons/fa';
+import { FaProjectDiagram, FaUsers, FaTasks, FaChartPie, FaPlus, FaUserPlus, FaClipboardList, FaUserCircle, FaPaperclip, FaFlag, FaEye, FaArrowLeft, FaTimes, FaToggleOn, FaToggleOff, FaUpload, FaSearch, FaFile, FaFileAlt, FaFileImage, FaFilePdf, FaFileWord, FaFileExcel, FaFileArchive, FaDownload } from 'react-icons/fa';
 import axios from 'axios';
 import { PROJECT_ENDPOINTS } from '../../../config/apiEndpoints';
 import { useAuth } from '../../../hooks/useAuth';
@@ -42,6 +42,12 @@ const ProjectDashboard = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [isTaskSelectionPopupOpen, setIsTaskSelectionPopupOpen] = useState(false);
+  const [taskSearchQuery, setTaskSearchQuery] = useState('');
+  const [taskStatusFilter, setTaskStatusFilter] = useState('all');
+  const [isAttachmentsPopupOpen, setIsAttachmentsPopupOpen] = useState(false);
+  const [selectedTaskForAttachments, setSelectedTaskForAttachments] = useState(null);
+  const [attachmentSearchQuery, setAttachmentSearchQuery] = useState('');
+  const [attachmentStatusFilter, setAttachmentStatusFilter] = useState('all');
 
   useEffect(() => {
     fetchProjectDetails();
@@ -315,6 +321,170 @@ const ProjectDashboard = () => {
     }
   };
 
+  const getFilteredTasks = () => {
+    let filteredTasks = [...projectData.tasks];
+
+    // Apply search filter
+    if (taskSearchQuery) {
+      filteredTasks = filteredTasks.filter(task =>
+        task.title.toLowerCase().includes(taskSearchQuery.toLowerCase())
+      );
+    }
+
+    // Apply status filter
+    if (taskStatusFilter !== 'all') {
+      filteredTasks = filteredTasks.filter(task =>
+        task.status.toLowerCase() === taskStatusFilter.toLowerCase()
+      );
+    }
+
+    return sortTasksByPriority(filteredTasks);
+  };
+
+  const getTasksWithAttachments = () => {
+    return projectData.tasks.filter(task => task.attachments && task.attachments.length > 0);
+  };
+
+  const getFileIcon = (fileType) => {
+    if (fileType.includes('image')) return <FaFileImage />;
+    if (fileType.includes('pdf')) return <FaFilePdf />;
+    if (fileType.includes('word') || fileType.includes('document')) return <FaFileWord />;
+    if (fileType.includes('excel') || fileType.includes('sheet')) return <FaFileExcel />;
+    if (fileType.includes('zip') || fileType.includes('rar')) return <FaFileArchive />;
+    if (fileType.includes('text')) return <FaFileAlt />;
+    return <FaFile />;
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const handleAttachmentClick = async (attachment) => {
+    try {
+      const token = getToken();
+      const tenantId = getTenantId();
+
+      if (!token || !tenantId) {
+        console.error('Missing authentication token or tenant ID');
+        return;
+      }
+
+      const response = await axios.get(
+        `${PROJECT_ENDPOINTS.GET_ATTACHMENT_DOWNLOAD}/${attachment.id}/download`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'X-TenantID': tenantId
+          },
+          responseType: 'blob'
+        }
+      );
+
+      // Create a blob from the response data
+      const blob = new Blob([response.data], { type: attachment.fileType });
+      
+      // Create a URL for the blob
+      const url = window.URL.createObjectURL(blob);
+      
+      // Create a temporary link element
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = attachment.fileName;
+      
+      // Append to body, click, and remove
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up the URL
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading attachment:', error);
+      if (error.response) {
+        // Handle specific error cases
+        switch (error.response.status) {
+          case 401:
+            console.error('Authentication failed. Please log in again.');
+            break;
+          case 403:
+            console.error('You do not have permission to download this attachment.');
+            break;
+          case 404:
+            console.error('Attachment not found.');
+            break;
+          default:
+            console.error('Failed to download attachment. Please try again.');
+        }
+      } else {
+        console.error('Network error. Please check your connection.');
+      }
+    }
+  };
+
+  const renderAttachments = (attachments, showAll = false) => {
+    const displayAttachments = showAll ? attachments : attachments.slice(0, 1);
+    return (
+      <div className="attachments-grid">
+        {displayAttachments.map(attachment => (
+          <div key={attachment.id} className="attachment-item">
+            <div className="attachment-icon">
+              {getFileIcon(attachment.fileType)}
+            </div>
+            <div className="attachment-info">
+              <h4>{attachment.fileName}</h4>
+              <p>{formatFileSize(attachment.fileSize)}</p>
+              <span className="attachment-type">{attachment.fileType}</span>
+            </div>
+            <button 
+              className="download-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAttachmentClick(attachment);
+              }}
+              title="Download attachment"
+            >
+              <FaDownload />
+            </button>
+          </div>
+        ))}
+        {!showAll && attachments.length > 1 && (
+          <div className="view-more-attachments">
+            <button onClick={(e) => {
+              e.stopPropagation();
+              setSelectedTaskForAttachments(attachments[0].taskId);
+            }}>
+              View {attachments.length - 1} more
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const getFilteredTasksWithAttachments = () => {
+    let filteredTasks = getTasksWithAttachments();
+
+    // Apply search filter
+    if (attachmentSearchQuery) {
+      filteredTasks = filteredTasks.filter(task =>
+        task.title.toLowerCase().includes(attachmentSearchQuery.toLowerCase())
+      );
+    }
+
+    // Apply status filter
+    if (attachmentStatusFilter !== 'all') {
+      filteredTasks = filteredTasks.filter(task =>
+        task.status.toLowerCase() === attachmentStatusFilter.toLowerCase()
+      );
+    }
+
+    return filteredTasks;
+  };
+
   if (loading) {
     return (
       <div className="loading-state">
@@ -478,22 +648,20 @@ const ProjectDashboard = () => {
         <div className="attachments-section">
           <div className="section-header">
             <h2>Attachments</h2>
-            <button className="view-button">
-              <FaEye /> Attachments
+            <button className="view-button" onClick={() => setIsAttachmentsPopupOpen(true)}>
+              <FaEye /> View All Attachments
             </button>
           </div>
           <div className="attachments-list">
-            {projectData.attachments.map((attachment) => (
-              <div key={attachment.id} className="attachment-card">
-                <div className="attachment-icon">
-                  <FaPaperclip />
-                </div>
-                <div className="attachment-info">
-                  <h3>{attachment.name || 'Unnamed Attachment'}</h3>
-                  <span className="attachment-meta">
-                    {(attachment.type || 'Unknown').toUpperCase()} • {attachment.size || 'Unknown size'}
+            {getTasksWithAttachments().slice(0, 3).map(task => (
+              <div key={task.id} className="task-attachments-card">
+                <div className="task-attachments-header">
+                  <h3>{task.title}</h3>
+                  <span className={`status-badge ${task.status.toLowerCase().replace('_', '-')}`}>
+                    {task.status.replace('_', ' ')}
                   </span>
                 </div>
+                {renderAttachments(task.attachments)}
               </div>
             ))}
           </div>
@@ -747,8 +915,32 @@ const ProjectDashboard = () => {
               </button>
             </div>
             <div className="popup-content">
+              <div className="task-filters">
+                <div className="search-container">
+                  <FaSearch className="search-icon" />
+                  <input
+                    type="text"
+                    placeholder="Search tasks by title..."
+                    value={taskSearchQuery}
+                    onChange={(e) => setTaskSearchQuery(e.target.value)}
+                    className="search-input"
+                  />
+                </div>
+                <select
+                  value={taskStatusFilter}
+                  onChange={(e) => setTaskStatusFilter(e.target.value)}
+                  className="status-filter"
+                >
+                  <option value="all">All Status</option>
+                  <option value="todo">To Do</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="in_review">In Review</option>
+                  <option value="done">Done</option>
+                  <option value="blocked">Blocked</option>
+                </select>
+              </div>
               <div className="tasks-grid">
-                {sortTasksByPriority(projectData.tasks).map((task) => (
+                {getFilteredTasks().map((task) => (
                   <div 
                     key={task.id} 
                     className="task-card"
@@ -768,7 +960,114 @@ const ProjectDashboard = () => {
                     <p className="task-description">{task.description || 'No description available'}</p>
                   </div>
                 ))}
+                {getFilteredTasks().length === 0 && (
+                  <div className="no-tasks-message">
+                    No tasks found matching your search criteria
+                  </div>
+                )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Attachments Popup */}
+      {isAttachmentsPopupOpen && (
+        <div className="popup-overlay">
+          <div className="tasks-popup">
+            <div className="popup-header">
+              <h2>All Attachments</h2>
+              <button className="close-button" onClick={() => {
+                setIsAttachmentsPopupOpen(false);
+                setSelectedTaskForAttachments(null);
+                setAttachmentSearchQuery('');
+                setAttachmentStatusFilter('all');
+              }}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className="popup-content">
+              {selectedTaskForAttachments ? (
+                <div className="task-attachments-detail">
+                  <button 
+                    className="back-button"
+                    onClick={() => setSelectedTaskForAttachments(null)}
+                  >
+                    <FaArrowLeft /> Back to Tasks
+                  </button>
+                  <div className="task-card">
+                    <div className="task-header">
+                      <h3>{projectData.tasks.find(t => t.id === selectedTaskForAttachments)?.title}</h3>
+                      <div className="task-meta">
+                        <span className={`priority-badge ${projectData.tasks.find(t => t.id === selectedTaskForAttachments)?.priority.toLowerCase()}`}>
+                          {projectData.tasks.find(t => t.id === selectedTaskForAttachments)?.priority}
+                        </span>
+                        <span className={`status-badge ${projectData.tasks.find(t => t.id === selectedTaskForAttachments)?.status.toLowerCase().replace('_', '-')}`}>
+                          {projectData.tasks.find(t => t.id === selectedTaskForAttachments)?.status.replace('_', ' ')}
+                        </span>
+                      </div>
+                    </div>
+                    {renderAttachments(
+                      projectData.tasks.find(t => t.id === selectedTaskForAttachments)?.attachments || [],
+                      true
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="task-filters">
+                    <div className="search-container">
+                      <FaSearch className="search-icon" />
+                      <input
+                        type="text"
+                        className="search-input"
+                        placeholder="Search tasks..."
+                        value={attachmentSearchQuery}
+                        onChange={(e) => setAttachmentSearchQuery(e.target.value)}
+                      />
+                    </div>
+                    <select
+                      className="status-filter"
+                      value={attachmentStatusFilter}
+                      onChange={(e) => setAttachmentStatusFilter(e.target.value)}
+                    >
+                      <option value="all">All Status</option>
+                      <option value="to_do">To Do</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="in_review">In Review</option>
+                      <option value="done">Done</option>
+                      <option value="blocked">Blocked</option>
+                    </select>
+                  </div>
+                  <div className="tasks-grid">
+                    {getFilteredTasksWithAttachments().map(task => (
+                      <div 
+                        key={task.id} 
+                        className="task-card"
+                        onClick={() => setSelectedTaskForAttachments(task.id)}
+                      >
+                        <div className="task-header">
+                          <h3>{task.title}</h3>
+                          <div className="task-meta">
+                            <span className={`priority-badge ${task.priority.toLowerCase()}`}>
+                              {task.priority}
+                            </span>
+                            <span className={`status-badge ${task.status.toLowerCase().replace('_', '-')}`}>
+                              {task.status.replace('_', ' ')}
+                            </span>
+                          </div>
+                        </div>
+                        {renderAttachments(task.attachments)}
+                      </div>
+                    ))}
+                    {getFilteredTasksWithAttachments().length === 0 && (
+                      <div className="no-tasks-message">
+                        No tasks found matching your search criteria
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

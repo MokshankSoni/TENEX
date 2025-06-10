@@ -36,7 +36,8 @@ export const PROJECT_ENDPOINTS = {
   REMOVE_PROJECT_MEMBER: (projectId, userId) => 
     `${BASE_URL}/projects/${projectId}/members/${userId}`,
   GET_PROJECT_MILESTONES: (id) => `${BASE_URL}/milestones/project/${id}`,
-  CREATE_MILESTONE: `${BASE_URL}/milestones`
+  CREATE_MILESTONE: `${BASE_URL}/milestones`,
+  GET_ATTACHMENT_DOWNLOAD: 'http://localhost:8080/api/attachments'
 };
 
 // Task endpoints
