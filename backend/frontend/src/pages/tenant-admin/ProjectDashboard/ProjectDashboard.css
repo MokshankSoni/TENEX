@@ -131,8 +131,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border: none;
   border-radius: 10px;
   background-color: #2d3748;
@@ -149,8 +149,8 @@
 }
 
 .back-button svg {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
 }
 
 .date-range {
@@ -1238,24 +1238,39 @@ input[type="file"]::-webkit-file-upload-button:hover {
   padding: 16px;
 }
 
-.back-button {
+.task-attachments-detail .back-button {
+  position: relative;
+  top: 0;
+  right: 0;
+  margin-bottom: 20px;
   display: flex;
   align-items: center;
   gap: 8px;
-  background: none;
-  border: none;
+  padding: 8px 16px;
+  background-color: #f0f7ff;
   color: #4a90e2;
+  border: 1px solid #e6f0ff;
+  border-radius: 6px;
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
-  padding: 8px 16px;
-  border-radius: 6px;
-  margin-bottom: 16px;
   transition: all 0.2s ease;
 }
 
-.back-button:hover {
-  background: #f8f9fa;
+.task-attachments-detail .back-button:hover {
+  background-color: #4a90e2;
+  color: #ffffff;
+  transform: translateX(-2px);
+  box-shadow: 0 2px 4px rgba(74, 144, 226, 0.2);
+}
+
+.task-attachments-detail .back-button svg {
+  font-size: 1rem;
+  transition: transform 0.2s ease;
+}
+
+.task-attachments-detail .back-button:hover svg {
+  transform: translateX(-2px);
 }
 
 .task-card {
@@ -1291,4 +1306,35 @@ input[type="file"]::-webkit-file-upload-button:hover {
 
 .download-button:active {
   transform: translateY(0);
+}
+
+.view-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background-color: #f0f7ff;
+  color: #4a90e2;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.view-button:hover {
+  background-color: #4a90e2;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(74, 144, 226, 0.2);
+}
+
+.view-button svg {
+  font-size: 1rem;
+  transition: transform 0.2s ease;
+}
+
+.view-button:hover svg {
+  transform: scale(1.1);
 } 

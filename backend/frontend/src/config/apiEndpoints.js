@@ -10,7 +10,9 @@ export const AUTH_ENDPOINTS = {
   FORGOT_PASSWORD: `${BASE_URL}/auth/forgot-password`,
   RESET_PASSWORD: `${BASE_URL}/auth/reset-password`,
   REFRESH_TOKEN: `${BASE_URL}/auth/refresh-token`,
-  VERIFY_TOKEN: `${BASE_URL}/auth/verify-token`
+  VERIFY_TOKEN: `${BASE_URL}/auth/verify-token`,
+  GET_ALL_USERS: `${BASE_URL}/auth/users`,
+  ADD_MEMBER: `${BASE_URL}/assignments`
 };
 
 // User endpoints

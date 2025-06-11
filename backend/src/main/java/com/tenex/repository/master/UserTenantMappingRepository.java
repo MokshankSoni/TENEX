@@ -21,4 +21,6 @@ public interface UserTenantMappingRepository extends JpaRepository<UserTenantMap
     Boolean existsByTenantIdAndUsername(String tenantId, String username);
 
     Optional<UserTenantMapping> findByTenantIdAndUserId(String tenantId, Long userId);
+
+    List<UserTenantMapping> findByTenantId(String tenantId);
 }

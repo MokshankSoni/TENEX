@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaProjectDiagram, FaUsers, FaTasks, FaChartPie, FaPlus, FaUserPlus, FaClipboardList, FaUserCircle, FaPaperclip, FaFlag, FaEye, FaArrowLeft, FaTimes, FaToggleOn, FaToggleOff, FaUpload, FaSearch, FaFile, FaFileAlt, FaFileImage, FaFilePdf, FaFileWord, FaFileExcel, FaFileArchive, FaDownload } from 'react-icons/fa';
 import axios from 'axios';
-import { PROJECT_ENDPOINTS } from '../../../config/apiEndpoints';
+import { PROJECT_ENDPOINTS, AUTH_ENDPOINTS } from '../../../config/apiEndpoints';
 import { useAuth } from '../../../hooks/useAuth';
 import { getToken, getTenantId } from '../../../utils/storageUtils';
 import './ProjectDashboard.css';
+import AddMemberPopUp from './AddMemberPopUp/AddMemberPopUp';
 
 const ProjectDashboard = () => {
   const navigate = useNavigate();
@@ -48,6 +49,8 @@ const ProjectDashboard = () => {
   const [selectedTaskForAttachments, setSelectedTaskForAttachments] = useState(null);
   const [attachmentSearchQuery, setAttachmentSearchQuery] = useState('');
   const [attachmentStatusFilter, setAttachmentStatusFilter] = useState('all');
+  const [isAddMemberPopupOpen, setIsAddMemberPopupOpen] = useState(false);
+  const [success, setSuccess] = useState(null);
 
   useEffect(() => {
     fetchProjectDetails();
@@ -84,6 +87,7 @@ const ProjectDashboard = () => {
       const project = response.data;
       
       setProjectData({
+        id: project.id,
         name: project.name,
         tenantName: project.tenantName,
         status: project.status,
@@ -485,6 +489,95 @@ const ProjectDashboard = () => {
     return filteredTasks;
   };
 
+  const handleAddMemberClick = () => {
+    setIsAddMemberPopupOpen(true);
+  };
+
+  const handleCloseAddMemberPopup = () => {
+    setIsAddMemberPopupOpen(false);
+  };
+
+  const handleAddMember = async (user) => {
+    try {
+      const token = getToken();
+      const tenantId = getTenantId();
+
+      if (!token || !tenantId) {
+        console.error('Missing authentication token or tenant ID');
+        setError('Authentication error. Please try logging in again.');
+        return;
+      }
+
+      // Log token and tenant ID for debugging
+      console.log('Token:', token.substring(0, 20) + '...'); // Only log first 20 chars for security
+      console.log('Tenant ID:', tenantId);
+      console.log('Project ID from state:', projectData.id);
+      console.log('Project ID from params:', projectId);
+      
+      // Prepare the request payload
+      const payload = {
+        username: user.username,
+        projectId: projectData.id || projectId, // Fallback to URL param if state ID is not available
+        roleInProject: user.roleInProject || "TM"
+      };
+
+      console.log('Sending request to add member:', {
+        url: AUTH_ENDPOINTS.ADD_MEMBER,
+        payload,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'X-TenantID': tenantId
+        }
+      });
+
+      // Make the API call to add the user to the project
+      const response = await axios.post(AUTH_ENDPOINTS.ADD_MEMBER, payload, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'X-TenantID': tenantId,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('Add member response:', response.data);
+
+      // Close the popup after successful addition
+      setIsAddMemberPopupOpen(false);
+      
+      // Refresh project details to show the new member
+      await fetchProjectDetails();
+      
+      // Show success message
+      setSuccess('Member added successfully');
+    } catch (err) {
+      console.error('Error adding member:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        headers: err.config?.headers, // Log the headers that were sent
+        payload: err.config?.data // Log the payload that was sent
+      });
+
+      if (err.response) {
+        switch (err.response.status) {
+          case 401:
+            setError('Authentication failed. Please log in again.');
+            break;
+          case 403:
+            setError('You do not have permission to add members to this project.');
+            break;
+          case 404:
+            setError('Project or user not found.');
+            break;
+          default:
+            setError(err.response.data?.message || 'Failed to add member to the project');
+        }
+      } else {
+        setError('Network error. Please check your connection.');
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading-state">
@@ -558,7 +651,7 @@ const ProjectDashboard = () => {
             <button className="action-button" onClick={handleAddAttachmentClick}>
               <FaPaperclip /> Add Attachment
             </button>
-            <button className="action-button">
+            <button className="action-button" onClick={handleAddMemberClick}>
               <FaUserPlus /> Add Team Member
             </button>
           </div>
@@ -992,8 +1085,9 @@ const ProjectDashboard = () => {
                   <button 
                     className="back-button"
                     onClick={() => setSelectedTaskForAttachments(null)}
+                    title="Back to Tasks"
                   >
-                    <FaArrowLeft /> Back to Tasks
+                    <FaArrowLeft />
                   </button>
                   <div className="task-card">
                     <div className="task-header">
@@ -1071,6 +1165,14 @@ const ProjectDashboard = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Add Member Popup */}
+      {isAddMemberPopupOpen && (
+        <AddMemberPopUp
+          onClose={handleCloseAddMemberPopup}
+          onAddMember={handleAddMember}
+        />
       )}
     </div>
   );

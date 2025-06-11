@@ -11,6 +11,7 @@ import com.tenex.dto.request.RegisterTenantRequest;
 import com.tenex.dto.request.SignupRequest;
 import com.tenex.dto.response.JwtResponse;
 import com.tenex.dto.response.MessageResponse;
+import com.tenex.dto.response.UserResponse;
 import com.tenex.entity.master.ERole;
 import com.tenex.entity.master.Role;
 import com.tenex.entity.master.User;
@@ -26,6 +27,7 @@ import com.tenex.config.multitenancy.TenantContext;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -198,5 +200,31 @@ public class AuthController {
         userTenantMappingRepository.save(mapping);
 
         return ResponseEntity.ok(new MessageResponse("Tenant registered successfully with admin user!"));
+    }
+
+    @GetMapping("/users")
+    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    public ResponseEntity<?> getAllUsers() {
+        String currentTenant = TenantContext.getCurrentTenant();
+
+        List<UserTenantMapping> userMappings = userTenantMappingRepository.findByTenantId(currentTenant);
+
+        List<UserResponse> users = userMappings.stream()
+                .map(mapping -> {
+                    User user = mapping.getUser();
+                    Set<String> roles = user.getRoles().stream()
+                            .map(role -> role.getName().name())
+                            .collect(Collectors.toSet());
+
+                    return new UserResponse(
+                            user.getId(),
+                            mapping.getUsername(),
+                            mapping.getEmail(),
+                            roles,
+                            mapping.getTenantAdmin());
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(users);
     }
 }
