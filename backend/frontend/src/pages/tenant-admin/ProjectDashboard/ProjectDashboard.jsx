@@ -1172,6 +1172,7 @@ const ProjectDashboard = () => {
         <AddMemberPopUp
           onClose={handleCloseAddMemberPopup}
           onAddMember={handleAddMember}
+          existingAssignments={projectData.userAssignments}
         />
       )}
     </div>

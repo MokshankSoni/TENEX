@@ -5,7 +5,7 @@ import { AUTH_ENDPOINTS } from '../../../../config/apiEndpoints';
 import { getToken, getTenantId } from '../../../../utils/storageUtils';
 import './AddMemberPopUp.css';
 
-const AddMemberPopUp = ({ onClose, onAddMember }) => {
+const AddMemberPopUp = ({ onClose, onAddMember, existingAssignments = [] }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -35,9 +35,31 @@ const AddMemberPopUp = ({ onClose, onAddMember }) => {
         }
       });
       
-      setUsers(response.data);
+      // Debug logging
+      console.log('Existing assignments:', existingAssignments);
+      console.log('All users from API:', response.data);
+      
+      // Filter out users who are already assigned to the project
+      // The userAssignments array contains objects with username and roleInProject
+      const assignedUsernames = existingAssignments.map(assignment => {
+        console.log('Assignment:', assignment);
+        return assignment.username;
+      });
+      
+      console.log('Assigned usernames:', assignedUsernames);
+      
+      const availableUsers = response.data.filter(user => {
+        const isAssigned = assignedUsernames.includes(user.username);
+        console.log(`User ${user.username} is assigned: ${isAssigned}`);
+        return !isAssigned;
+      });
+      
+      console.log('Available users after filtering:', availableUsers);
+      
+      setUsers(availableUsers);
       setLoading(false);
     } catch (err) {
+      console.error('Error fetching users:', err);
       setError('Failed to fetch users. Please try again.');
       setLoading(false);
     }
@@ -89,6 +111,7 @@ const AddMemberPopUp = ({ onClose, onAddMember }) => {
   };
 
   const handleAddMember = (user) => {
+    // Get the selected role or default to ROLE_TEAM_MEMBER
     const roleInProject = selectedUserRole[user.id] || 'ROLE_TEAM_MEMBER';
     onAddMember({ ...user, roleInProject });
   };
