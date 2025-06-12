@@ -353,6 +353,7 @@
   background: #f0f7ff;
   border: 1px solid #e6f0ff;
   transition: transform 0.2s ease;
+  position: relative;
 }
 
 .team-member-card:hover {
@@ -397,6 +398,41 @@
 .member-assigned {
   font-size: 0.75rem;
   color: #718096;
+}
+
+.remove-member-button {
+  background: none;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+}
+
+.remove-member-button:hover {
+  opacity: 1;
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+.team-member-card .remove-member-button {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+}
+
+.task-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.task-meta .remove-member-button {
+  font-size: 0.9rem;
 }
 
 /* Attachments Section */
@@ -525,26 +561,91 @@
 }
 
 .task-card {
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 16px;
-  border: 1px solid #e9ecef;
+  background: white;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  border: 1px solid #e2e8f0;
+}
+
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-color: #cbd5e0;
 }
 
 .task-header {
-  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
 }
 
-.task-header h3 {
-  margin: 0 0 8px 0;
+.member-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.member-info h3 {
+  margin: 0;
   font-size: 1.1rem;
-  color: #212529;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 0.25rem;
+}
+
+.member-email {
+  font-size: 0.875rem;
+  color: #718096;
 }
 
 .task-meta {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.role-badge {
+  padding: 0.375rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: white;
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+
+.remove-member-button {
+  background: none;
+  border: none;
+  color: #e53e3e;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  border-radius: 6px;
+}
+
+.remove-member-button:hover {
+  background-color: #fff5f5;
+  color: #c53030;
+}
+
+.milestone-details {
+  font-size: 0.875rem;
+  color: #718096;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.milestone-details span {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
 }
 
 .priority-badge {
@@ -870,6 +971,50 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+.popup-actions .search-box {
+  position: relative;
+  flex: 1;
+  max-width: 300px;
+}
+
+.popup-actions .search-box .search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #718096;
+  font-size: 0.875rem;
+}
+
+.popup-actions .search-box input {
+  width: 100%;
+  padding: 0.5rem 1rem 0.5rem 2.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.popup-actions .search-box input:focus {
+  outline: none;
+  border-color: #4299e1;
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.popup-actions .search-box input::placeholder {
+  color: #a0aec0;
+}
+
+.no-results-message {
+  text-align: center;
+  padding: 2rem;
+  color: #718096;
+  font-size: 0.875rem;
+  background: #f7fafc;
+  border-radius: 8px;
+  margin: 1rem 0;
 }
 
 .role-filter {
@@ -1337,4 +1482,88 @@ input[type="file"]::-webkit-file-upload-button:hover {
 
 .view-button:hover svg {
   transform: scale(1.1);
+}
+
+/* Confirmation Popup Styles */
+.confirmation-popup {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  animation: slideIn 0.2s ease-out;
+}
+
+.confirmation-popup .popup-header {
+  padding: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.confirmation-popup .popup-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #2d3748;
+}
+
+.confirmation-popup .popup-content {
+  padding: 1.5rem;
+}
+
+.confirmation-popup .popup-content p {
+  margin: 0 0 1.5rem 0;
+  color: #4a5568;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.confirmation-popup .popup-content strong {
+  color: #2d3748;
+}
+
+.confirmation-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.confirm-button {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.confirm-button.danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.confirm-button.danger:hover {
+  background-color: #c82333;
+}
+
+.confirm-button.secondary {
+  background-color: #e2e8f0;
+  color: #4a5568;
+}
+
+.confirm-button.secondary:hover {
+  background-color: #cbd5e0;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 } 

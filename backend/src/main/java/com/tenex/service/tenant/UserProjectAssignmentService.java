@@ -105,9 +105,6 @@ public class UserProjectAssignmentService {
                         throw new AccessDeniedException("You don't have permission to delete project assignments");
                 }
 
-                Project project = projectRepository.findByIdWithManual(projectId)
-                                .orElseThrow(() -> new RuntimeException("Project not found"));
-
                 // Get user ID from username
                 Long userId = userTenantMappingRepository.findByTenantIdAndUsername(
                                 TenantContext.getCurrentTenant(),
@@ -116,7 +113,7 @@ public class UserProjectAssignmentService {
                                 .getUser()
                                 .getId();
 
-                assignmentRepository.deleteByUserIdAndProject(userId, project);
+                assignmentRepository.deleteByUserIdAndProjectId(userId, projectId);
 
                 // Log activity
                 activityLogUtil.logActivity(ActivityAction.UNASSIGN_USER, "UserProjectAssignment", projectId);

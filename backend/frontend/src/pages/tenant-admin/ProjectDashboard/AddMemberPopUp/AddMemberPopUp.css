@@ -343,4 +343,101 @@
 
 .role-select:hover {
   border-color: #cbd5e0;
+}
+
+/* Confirmation Popup Styles */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+}
+
+.confirmation-popup {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  animation: slideIn 0.2s ease-out;
+}
+
+.confirmation-popup .popup-header {
+  padding: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.confirmation-popup .popup-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #2d3748;
+}
+
+.confirmation-popup .popup-content {
+  padding: 1.5rem;
+}
+
+.confirmation-popup .popup-content p {
+  margin: 0 0 1.5rem 0;
+  color: #4a5568;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.confirmation-popup .popup-content strong {
+  color: #2d3748;
+}
+
+.confirmation-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.confirm-button {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.confirm-button.primary {
+  background-color: #4299e1;
+  color: white;
+}
+
+.confirm-button.primary:hover {
+  background-color: #3182ce;
+}
+
+.confirm-button.secondary {
+  background-color: #e2e8f0;
+  color: #4a5568;
+}
+
+.confirm-button.secondary:hover {
+  background-color: #cbd5e0;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 } 

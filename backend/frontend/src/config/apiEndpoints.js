@@ -12,7 +12,8 @@ export const AUTH_ENDPOINTS = {
   REFRESH_TOKEN: `${BASE_URL}/auth/refresh-token`,
   VERIFY_TOKEN: `${BASE_URL}/auth/verify-token`,
   GET_ALL_USERS: `${BASE_URL}/auth/users`,
-  ADD_MEMBER: `${BASE_URL}/assignments`
+  ADD_MEMBER: `${BASE_URL}/assignments`,
+  REMOVE_MEMBER: (username, projectId) => `${BASE_URL}/assignments/${username}/${projectId}`
 };
 
 // User endpoints

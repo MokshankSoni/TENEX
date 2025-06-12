@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaProjectDiagram, FaUsers, FaTasks, FaChartPie, FaPlus, FaUserPlus, FaClipboardList, FaUserCircle, FaPaperclip, FaFlag, FaEye, FaArrowLeft, FaTimes, FaToggleOn, FaToggleOff, FaUpload, FaSearch, FaFile, FaFileAlt, FaFileImage, FaFilePdf, FaFileWord, FaFileExcel, FaFileArchive, FaDownload } from 'react-icons/fa';
+import { FaProjectDiagram, FaUsers, FaTasks, FaChartPie, FaPlus, FaUserPlus, FaClipboardList, FaUserCircle, FaPaperclip, FaFlag, FaEye, FaArrowLeft, FaTimes, FaToggleOn, FaToggleOff, FaUpload, FaSearch, FaFile, FaFileAlt, FaFileImage, FaFilePdf, FaFileWord, FaFileExcel, FaFileArchive, FaDownload, FaTrash } from 'react-icons/fa';
 import axios from 'axios';
 import { PROJECT_ENDPOINTS, AUTH_ENDPOINTS } from '../../../config/apiEndpoints';
 import { useAuth } from '../../../hooks/useAuth';
@@ -51,6 +51,9 @@ const ProjectDashboard = () => {
   const [attachmentStatusFilter, setAttachmentStatusFilter] = useState('all');
   const [isAddMemberPopupOpen, setIsAddMemberPopupOpen] = useState(false);
   const [success, setSuccess] = useState(null);
+  const [isRemoveMemberPopupOpen, setIsRemoveMemberPopupOpen] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState(null);
+  const [teamMemberSearchQuery, setTeamMemberSearchQuery] = useState('');
 
   useEffect(() => {
     fetchProjectDetails();
@@ -187,12 +190,26 @@ const ProjectDashboard = () => {
   };
 
   const getFilteredTeamMembers = () => {
-    if (selectedRole === 'all') {
-      return projectData.userAssignments;
+    let filteredMembers = projectData.userAssignments;
+    
+    // Apply role filter
+    if (selectedRole !== 'all') {
+      filteredMembers = filteredMembers.filter(
+        member => member.roleInProject.toLowerCase() === selectedRole.toLowerCase()
+      );
     }
-    return projectData.userAssignments?.filter(
-      member => member.roleInProject.toLowerCase() === selectedRole.toLowerCase()
-    );
+
+    // Apply search filter
+    if (teamMemberSearchQuery) {
+      const query = teamMemberSearchQuery.toLowerCase();
+      filteredMembers = filteredMembers.filter(
+        member => 
+          member.username.toLowerCase().includes(query) ||
+          (member.email && member.email.toLowerCase().includes(query))
+      );
+    }
+
+    return filteredMembers;
   };
 
   const handleAddMilestoneClick = () => {
@@ -514,11 +531,14 @@ const ProjectDashboard = () => {
       console.log('Project ID from state:', projectData.id);
       console.log('Project ID from params:', projectId);
       
+      // Get the role from the user object, defaulting to their primary role
+      const roleInProject = user.roleInProject || user.roles[0] || 'ROLE_TEAM_MEMBER';
+      
       // Prepare the request payload
       const payload = {
         username: user.username,
         projectId: projectData.id || projectId, // Fallback to URL param if state ID is not available
-        roleInProject: user.roleInProject || "TM"
+        roleInProject: roleInProject
       };
 
       console.log('Sending request to add member:', {
@@ -554,8 +574,8 @@ const ProjectDashboard = () => {
         message: err.message,
         response: err.response?.data,
         status: err.response?.status,
-        headers: err.config?.headers, // Log the headers that were sent
-        payload: err.config?.data // Log the payload that was sent
+        headers: err.config?.headers,
+        payload: err.config?.data
       });
 
       if (err.response) {
@@ -575,6 +595,80 @@ const ProjectDashboard = () => {
       } else {
         setError('Network error. Please check your connection.');
       }
+    }
+  };
+
+  const handleRemoveMemberClick = (username, projectId) => {
+    setMemberToRemove({ username, projectId });
+    setIsRemoveMemberPopupOpen(true);
+  };
+
+  const handleConfirmRemoveMember = async () => {
+    if (!memberToRemove) return;
+    
+    try {
+      const token = getToken();
+      const tenantId = getTenantId();
+      
+      if (!token || !tenantId) {
+        setError('Authentication token or tenant ID not found. Please login again.');
+        navigate('/signin');
+        return;
+      }
+
+      await axios.delete(AUTH_ENDPOINTS.REMOVE_MEMBER(memberToRemove.username, memberToRemove.projectId), {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'X-TenantID': tenantId
+        }
+      });
+
+      // Update the local state to remove the member
+      setProjectData(prev => ({
+        ...prev,
+        userAssignments: prev.userAssignments.filter(
+          assignment => !(assignment.username === memberToRemove.username && assignment.projectId === memberToRemove.projectId)
+        )
+      }));
+
+      setSuccess('Team member removed successfully');
+    } catch (error) {
+      console.error('Error removing team member:', error);
+      setError(error.response?.data?.message || 'Failed to remove team member');
+    } finally {
+      setIsRemoveMemberPopupOpen(false);
+      setMemberToRemove(null);
+    }
+  };
+
+  const handleCancelRemoveMember = () => {
+    setIsRemoveMemberPopupOpen(false);
+    setMemberToRemove(null);
+  };
+
+  const getRoleColor = (role) => {
+    const roleLower = role.toLowerCase();
+    if (roleLower.includes('tenant_admin')) return '#4CAF50';
+    if (roleLower.includes('project_manager')) return '#2196F3';
+    if (roleLower.includes('team_member')) return '#FF9800';
+    if (roleLower.includes('client')) return '#9C27B0';
+    return '#718096';
+  };
+
+  const formatRole = (role) => {
+    const roleName = role.replace('ROLE_', '').toLowerCase();
+    switch (roleName) {
+      case 'tenant_admin':
+        return 'Tenant Admin';
+      case 'project_manager':
+        return 'Project Manager';
+      case 'team_member':
+        return 'Team Member';
+      case 'client':
+        return 'Client';
+      default:
+        return roleName;
     }
   };
 
@@ -720,7 +814,7 @@ const ProjectDashboard = () => {
             </button>
           </div>
           <div className="team-grid">
-            {projectData.userAssignments?.slice(0, 3).map((assignment) => (
+            {projectData.userAssignments?.slice(0, 10).map((assignment) => (
               <div key={`${assignment.username}-${assignment.projectId}`} className="team-member-card">
                 <div className="member-avatar">
                   {assignment.username?.[0]?.toUpperCase() || '?'}
@@ -732,6 +826,13 @@ const ProjectDashboard = () => {
                     Assigned: {new Date(assignment.assignedAt).toLocaleDateString()}
                   </div>
                 </div>
+                <button 
+                  className="remove-member-button"
+                  onClick={() => handleRemoveMemberClick(assignment.username, assignment.projectId)}
+                  title="Remove member"
+                >
+                  <FaTrash />
+                </button>
               </div>
             ))}
           </div>
@@ -836,15 +937,25 @@ const ProjectDashboard = () => {
             <div className="popup-header">
               <h2>All Team Members</h2>
               <div className="popup-actions">
+                <div className="search-box">
+                  <FaSearch className="search-icon" />
+                  <input
+                    type="text"
+                    placeholder="Search members..."
+                    value={teamMemberSearchQuery}
+                    onChange={(e) => setTeamMemberSearchQuery(e.target.value)}
+                  />
+                </div>
                 <select 
                   className="role-filter" 
                   value={selectedRole} 
                   onChange={handleRoleFilterChange}
                 >
                   <option value="all">All Roles</option>
-                  <option value="project manager">Project Manager</option>
-                  <option value="admin">Admin</option>
-                  <option value="tm">TM</option>
+                  <option value="ROLE_TENANT_ADMIN">Tenant Admin</option>
+                  <option value="ROLE_PROJECT_MANAGER">Project Manager</option>
+                  <option value="ROLE_TEAM_MEMBER">Team Member</option>
+                  <option value="ROLE_CLIENT">Client</option>
                 </select>
                 <button className="close-button" onClick={closeTeamMembersPopup}>
                   <FaTimes />
@@ -856,11 +967,24 @@ const ProjectDashboard = () => {
                 {getFilteredTeamMembers()?.map((assignment) => (
                   <div key={`${assignment.username}-${assignment.projectId}`} className="task-card">
                     <div className="task-header">
-                      <h3>{assignment.username}</h3>
+                      <div className="member-info">
+                        <h3>{assignment.username}</h3>
+                        <div className="member-email">{assignment.email}</div>
+                      </div>
                       <div className="task-meta">
-                        <span className={`status-badge ${assignment.roleInProject.toLowerCase().replace(' ', '-')}`}>
-                          {assignment.roleInProject}
+                        <span 
+                          className="role-badge"
+                          style={{ backgroundColor: getRoleColor(assignment.roleInProject) }}
+                        >
+                          {formatRole(assignment.roleInProject)}
                         </span>
+                        <button 
+                          className="remove-member-button"
+                          onClick={() => handleRemoveMemberClick(assignment.username, assignment.projectId)}
+                          title="Remove member"
+                        >
+                          <FaTrash />
+                        </button>
                       </div>
                     </div>
                     <div className="milestone-details">
@@ -868,6 +992,11 @@ const ProjectDashboard = () => {
                     </div>
                   </div>
                 ))}
+                {getFilteredTeamMembers()?.length === 0 && (
+                  <div className="no-results-message">
+                    <p>No team members found matching your search criteria</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1174,6 +1303,37 @@ const ProjectDashboard = () => {
           onAddMember={handleAddMember}
           existingAssignments={projectData.userAssignments}
         />
+      )}
+
+      {/* Add the confirmation popup */}
+      {isRemoveMemberPopupOpen && memberToRemove && (
+        <div className="popup-overlay">
+          <div className="confirmation-popup">
+            <div className="popup-header">
+              <h2>Confirm Removal</h2>
+              <button className="close-button" onClick={handleCancelRemoveMember}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className="popup-content">
+              <p>Are you sure you want to remove <strong>{memberToRemove.username}</strong> from this project?</p>
+              <div className="confirmation-actions">
+                <button 
+                  className="confirm-button danger" 
+                  onClick={handleConfirmRemoveMember}
+                >
+                  Yes, Remove
+                </button>
+                <button 
+                  className="confirm-button secondary" 
+                  onClick={handleCancelRemoveMember}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

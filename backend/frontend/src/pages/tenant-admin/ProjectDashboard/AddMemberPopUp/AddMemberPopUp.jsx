@@ -12,6 +12,8 @@ const AddMemberPopUp = ({ onClose, onAddMember, existingAssignments = [] }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRole, setSelectedRole] = useState('all');
   const [selectedUserRole, setSelectedUserRole] = useState({});
+  const [isConfirmPopupOpen, setIsConfirmPopupOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   useEffect(() => {
     fetchUsers();
@@ -110,10 +112,24 @@ const AddMemberPopUp = ({ onClose, onAddMember, existingAssignments = [] }) => {
     return '#718096';
   };
 
-  const handleAddMember = (user) => {
-    // Get the selected role or default to ROLE_TEAM_MEMBER
-    const roleInProject = selectedUserRole[user.id] || 'ROLE_TEAM_MEMBER';
-    onAddMember({ ...user, roleInProject });
+  const handleAddMemberClick = (user) => {
+    setSelectedUser(user);
+    setIsConfirmPopupOpen(true);
+  };
+
+  const handleConfirmAddMember = () => {
+    if (selectedUser) {
+      // Use the user's actual role from their roles array
+      const roleInProject = selectedUser.roles[0];
+      onAddMember({ ...selectedUser, roleInProject });
+      setIsConfirmPopupOpen(false);
+      setSelectedUser(null);
+    }
+  };
+
+  const handleCancelAddMember = () => {
+    setIsConfirmPopupOpen(false);
+    setSelectedUser(null);
   };
 
   const handleRoleSelect = (userId, role) => {
@@ -136,6 +152,16 @@ const AddMemberPopUp = ({ onClose, onAddMember, existingAssignments = [] }) => {
       default:
         return role.replace('ROLE_', '');
     }
+  };
+
+  const getDefaultRoleForUser = (user) => {
+    // Return the user's primary role from their roles array
+    return user.roles[0] || 'ROLE_TEAM_MEMBER';
+  };
+
+  const getAvailableRolesForUser = (user) => {
+    // Only allow selecting the user's actual role
+    return user.roles;
   };
 
   return (
@@ -205,21 +231,10 @@ const AddMemberPopUp = ({ onClose, onAddMember, existingAssignments = [] }) => {
                       <span>{user.email}</span>
                     </div>
                   </div>
-                  <div className="role-selection">
-                    <select
-                      value={selectedUserRole[user.id] || 'ROLE_TEAM_MEMBER'}
-                      onChange={(e) => handleRoleSelect(user.id, e.target.value)}
-                      className="role-select"
-                    >
-                      <option value="ROLE_TEAM_MEMBER">Team Member</option>
-                      <option value="ROLE_PROJECT_MANAGER">Project Manager</option>
-                      <option value="ROLE_CLIENT">Client</option>
-                    </select>
-                  </div>
                 </div>
                 <button 
                   className="add-button"
-                  onClick={() => handleAddMember(user)}
+                  onClick={() => handleAddMemberClick(user)}
                   title="Add to project"
                 >
                   <FaPlus />
@@ -236,6 +251,40 @@ const AddMemberPopUp = ({ onClose, onAddMember, existingAssignments = [] }) => {
           </div>
         )}
       </div>
+
+      {/* Add Confirmation Popup */}
+      {isConfirmPopupOpen && selectedUser && (
+        <div className="popup-overlay">
+          <div className="confirmation-popup">
+            <div className="popup-header">
+              <h2>Confirm Addition</h2>
+              <button className="close-button" onClick={handleCancelAddMember}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className="popup-content">
+              <p>
+                Are you sure you want to add <strong>{selectedUser.username}</strong> to this project as{' '}
+                <strong>{getRoleDisplayName(selectedUser.roles[0])}</strong>?
+              </p>
+              <div className="confirmation-actions">
+                <button 
+                  className="confirm-button primary" 
+                  onClick={handleConfirmAddMember}
+                >
+                  Yes, Add Member
+                </button>
+                <button 
+                  className="confirm-button secondary" 
+                  onClick={handleCancelAddMember}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
