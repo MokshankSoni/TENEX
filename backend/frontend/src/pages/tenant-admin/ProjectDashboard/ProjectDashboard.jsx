@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaProjectDiagram, FaUsers, FaTasks, FaChartPie, FaPlus, FaUserPlus, FaClipboardList, FaUserCircle, FaPaperclip, FaFlag, FaEye, FaArrowLeft, FaTimes, FaToggleOn, FaToggleOff, FaUpload, FaSearch, FaFile, FaFileAlt, FaFileImage, FaFilePdf, FaFileWord, FaFileExcel, FaFileArchive, FaDownload, FaTrash } from 'react-icons/fa';
+import { FaProjectDiagram, FaUsers, FaTasks, FaChartPie, FaPlus, FaUserPlus, FaClipboardList, FaUserCircle, FaPaperclip, FaFlag, FaEye, FaArrowLeft, FaTimes, FaToggleOn, FaToggleOff, FaUpload, FaSearch, FaFile, FaFileAlt, FaFileImage, FaFilePdf, FaFileWord, FaFileExcel, FaFileArchive, FaDownload, FaTrash, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
 import axios from 'axios';
 import { PROJECT_ENDPOINTS, AUTH_ENDPOINTS } from '../../../config/apiEndpoints';
 import { useAuth } from '../../../hooks/useAuth';
@@ -54,6 +54,9 @@ const ProjectDashboard = () => {
   const [isRemoveMemberPopupOpen, setIsRemoveMemberPopupOpen] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState(null);
   const [teamMemberSearchQuery, setTeamMemberSearchQuery] = useState('');
+  const [isStatusPopupOpen, setIsStatusPopupOpen] = useState(false);
+  const [isConfirmPopupOpen, setIsConfirmPopupOpen] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState(null);
 
   useEffect(() => {
     fetchProjectDetails();
@@ -107,7 +110,6 @@ const ProjectDashboard = () => {
       console.error('Error fetching project details:', err);
       if (err.response?.status === 401) {
         setError('Session expired. Please login again.');
-        navigate('/signin');
       } else if (err.response?.status === 403) {
         setError('You do not have permission to access this project.');
       } else {
@@ -118,13 +120,23 @@ const ProjectDashboard = () => {
     }
   };
 
-  const handleStatusChange = async (newStatus) => {
+  const handleStatusClick = () => {
+    setIsStatusPopupOpen(true);
+  };
+
+  const handleStatusSelect = (newStatus) => {
+    setSelectedStatus(newStatus);
+    setIsStatusPopupOpen(false);
+    setIsConfirmPopupOpen(true);
+  };
+
+  const handleConfirmStatusUpdate = async () => {
     try {
       const token = getToken();
       const tenantId = getTenantId();
 
-      await axios.patch(PROJECT_ENDPOINTS.UPDATE_PROJECT(projectId), 
-        { status: newStatus },
+      await axios.patch(PROJECT_ENDPOINTS.UPDATE_PROJECT_STATUS(projectId), 
+        { status: selectedStatus },
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -136,12 +148,50 @@ const ProjectDashboard = () => {
       
       setProjectData(prev => ({
         ...prev,
-        status: newStatus
+        status: selectedStatus
       }));
+
+      setSuccess('Project status updated successfully');
+      setIsConfirmPopupOpen(false);
+      setSelectedStatus(null);
+
+      // Auto-dismiss success message after 2 seconds
+      setTimeout(() => {
+        setSuccess(null);
+      }, 2000);
     } catch (err) {
       console.error('Error updating project status:', err);
       setError('Failed to update project status. Please try again.');
+
+      // Auto-dismiss error message after 2 seconds
+      setTimeout(() => {
+        setError(null);
+      }, 2000);
     }
+  };
+
+  const handleCancelStatusUpdate = () => {
+    setIsConfirmPopupOpen(false);
+    setSelectedStatus(null);
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'ACTIVE':
+        return '#4CAF50'; // Green
+      case 'ON_HOLD':
+        return '#FF9800'; // Orange
+      case 'COMPLETED':
+        return '#2196F3'; // Blue
+      case 'CANCELLED':
+        return '#F44336'; // Red
+      default:
+        return '#718096'; // Gray
+    }
+  };
+
+  const getStatusDisplayName = (status) => {
+    return status.replace('_', ' ');
   };
 
   const handleTasksClick = () => {
@@ -699,12 +749,14 @@ const ProjectDashboard = () => {
           <div className="project-meta">
             <div 
               className="status-badge" 
+              onClick={handleStatusClick}
               style={{ 
-                backgroundColor: projectData.status === 'Active' ? '#e6f4ea' : '#fce8e6',
-                color: projectData.status === 'Active' ? '#1e7e34' : '#d32f2f'
+                backgroundColor: getStatusColor(projectData.status),
+                color: 'white',
+                cursor: 'pointer'
               }}
             >
-              {projectData.status}
+              {getStatusDisplayName(projectData.status)}
             </div>
             <div className="date-range">
               <span>Start: {new Date(projectData.startDate).toLocaleDateString()}</span>
@@ -1333,6 +1385,104 @@ const ProjectDashboard = () => {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Status Update Popup */}
+      {isStatusPopupOpen && (
+        <div className="popup-overlay">
+          <div className="status-popup">
+            <div className="popup-header">
+              <h2>Update Project Status</h2>
+              <button className="close-button" onClick={() => setIsStatusPopupOpen(false)}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className="popup-content">
+              <div className="status-options">
+                <button
+                  className="status-option"
+                  style={{ backgroundColor: getStatusColor('ON_HOLD') }}
+                  onClick={() => handleStatusSelect('ON_HOLD')}
+                >
+                  On Hold
+                </button>
+                <button
+                  className="status-option"
+                  style={{ backgroundColor: getStatusColor('ACTIVE') }}
+                  onClick={() => handleStatusSelect('ACTIVE')}
+                >
+                  Active
+                </button>
+                <button
+                  className="status-option"
+                  style={{ backgroundColor: getStatusColor('COMPLETED') }}
+                  onClick={() => handleStatusSelect('COMPLETED')}
+                >
+                  Completed
+                </button>
+                <button
+                  className="status-option"
+                  style={{ backgroundColor: getStatusColor('CANCELLED') }}
+                  onClick={() => handleStatusSelect('CANCELLED')}
+                >
+                  Cancelled
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status Update Confirmation Popup */}
+      {isConfirmPopupOpen && (
+        <div className="popup-overlay">
+          <div className="confirmation-popup">
+            <div className="popup-header">
+              <h2>Confirm Status Update</h2>
+              <button className="close-button" onClick={handleCancelStatusUpdate}>
+                <FaTimes />
+              </button>
+            </div>
+            <div className="popup-content">
+              <p>Are you sure you want to update the project status to <strong>{getStatusDisplayName(selectedStatus)}</strong>?</p>
+              <div className="confirmation-buttons">
+                <button 
+                  className="confirm-button primary"
+                  onClick={handleConfirmStatusUpdate}
+                >
+                  Yes, Update Status
+                </button>
+                <button 
+                  className="confirm-button secondary"
+                  onClick={handleCancelStatusUpdate}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Messages */}
+      {success && (
+        <div className="toast success">
+          <FaCheckCircle />
+          <span>{success}</span>
+          <button onClick={() => setSuccess(null)}>
+            <FaTimes />
+          </button>
+        </div>
+      )}
+
+      {error && (
+        <div className="toast error">
+          <FaExclamationCircle />
+          <span>{error}</span>
+          <button onClick={() => setError(null)}>
+            <FaTimes />
+          </button>
         </div>
       )}
     </div>

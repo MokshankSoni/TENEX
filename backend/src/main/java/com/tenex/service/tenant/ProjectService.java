@@ -180,6 +180,33 @@ public class ProjectService {
                                 .collect(Collectors.toList());
         }
 
+        /**
+         * Update project status
+         *
+         * @param id     Project ID
+         * @param status New project status
+         * @return Updated project if found and belongs to tenant, empty Optional
+         *         otherwise
+         */
+        @Transactional(value = "tenantTransactionManager")
+        public Optional<ProjectDTO> updateProjectStatus(Long id, String status) {
+                if (!projectAuthorizationService.canUpdateProject(id)) {
+                        throw new AccessDeniedException("You don't have permission to update this project's status");
+                }
+
+                return projectRepository.findByIdWithManual(id)
+                                .map(project -> {
+                                        project.setStatus(status);
+                                        Project savedProject = projectRepository.save(project);
+
+                                        // Log activity
+                                        activityLogUtil.logActivity(ActivityAction.UPDATE_PROJECT_STATUS, "Project",
+                                                        savedProject.getId());
+
+                                        return convertToDTO(savedProject);
+                                });
+        }
+
         private void updateProjectFromDTO(Project project, ProjectDTO dto) {
                 project.setName(dto.getName());
                 project.setDescription(dto.getDescription());

@@ -5,6 +5,7 @@ public enum ActivityAction {
     CREATE_PROJECT,
     UPDATE_PROJECT,
     DELETE_PROJECT,
+    UPDATE_PROJECT_STATUS,
 
     // Task actions
     CREATE_TASK,

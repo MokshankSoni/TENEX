@@ -72,28 +72,16 @@
 }
 
 .status-badge {
-  padding: 0.5rem 1.25rem;
+  padding: 0.5rem 1rem;
   border-radius: 20px;
-  font-size: 0.95rem;
+  font-size: 0.875rem;
   font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  background-color: #e6f0ff;
-  color: #4a90e2;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.status-badge::before {
-  content: '●';
-  font-size: 1.2rem;
+  transition: all 0.2s ease;
 }
 
 .status-badge:hover {
-  background-color: #4a90e2;
-  color: #ffffff;
   transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .status-badge.completed {
@@ -1484,6 +1472,61 @@ input[type="file"]::-webkit-file-upload-button:hover {
   transform: scale(1.1);
 }
 
+/* Status Popup Styles */
+.status-popup {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  animation: slideIn 0.2s ease-out;
+}
+
+.status-popup .popup-header {
+  padding: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status-popup .popup-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #2d3748;
+}
+
+.status-popup .popup-content {
+  padding: 1.5rem;
+}
+
+.status-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.status-option {
+  padding: 1rem;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  font-size: 1rem;
+}
+
+.status-option:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.status-option:active {
+  transform: translateY(0);
+}
+
 /* Confirmation Popup Styles */
 .confirmation-popup {
   background: white;
@@ -1521,9 +1564,10 @@ input[type="file"]::-webkit-file-upload-button:hover {
 
 .confirmation-popup .popup-content strong {
   color: #2d3748;
+  font-weight: 600;
 }
 
-.confirmation-actions {
+.confirmation-buttons {
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
@@ -1531,21 +1575,21 @@ input[type="file"]::-webkit-file-upload-button:hover {
 
 .confirm-button {
   padding: 0.5rem 1rem;
+  border: none;
   border-radius: 6px;
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  border: none;
 }
 
-.confirm-button.danger {
-  background-color: #dc3545;
+.confirm-button.primary {
+  background-color: #4CAF50;
   color: white;
 }
 
-.confirm-button.danger:hover {
-  background-color: #c82333;
+.confirm-button.primary:hover {
+  background-color: #43A047;
 }
 
 .confirm-button.secondary {
@@ -1555,6 +1599,52 @@ input[type="file"]::-webkit-file-upload-button:hover {
 
 .confirm-button.secondary:hover {
   background-color: #cbd5e0;
+}
+
+/* Toast Message Styles */
+.toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  animation: slideIn 0.3s ease-out;
+  z-index: 1000;
+}
+
+.toast.success {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.toast.error {
+  background-color: #F44336;
+  color: white;
+}
+
+.toast button {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.toast button:hover {
+  opacity: 1;
+}
+
+.toast svg {
+  font-size: 1.25rem;
 }
 
 @keyframes slideIn {

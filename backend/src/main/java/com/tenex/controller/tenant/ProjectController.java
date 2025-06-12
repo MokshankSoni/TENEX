@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -97,5 +98,25 @@ public class ProjectController {
     @GetMapping("/search")
     public ResponseEntity<List<ProjectDTO>> searchProjectsByName(@RequestParam String name) {
         return ResponseEntity.ok(projectService.searchProjectsByName(name));
+    }
+
+    /**
+     * Update project status
+     *
+     * @param id     Project ID
+     * @param status New project status
+     * @return Updated project if found and belongs to tenant, 404 otherwise
+     */
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ProjectDTO> updateProjectStatus(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> statusUpdate) {
+        String newStatus = statusUpdate.get("status");
+        if (newStatus == null) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        return projectService.updateProjectStatus(id, newStatus)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 }

@@ -33,6 +33,7 @@ export const PROJECT_ENDPOINTS = {
   GET_PROJECT: (id) => `${BASE_URL}/projects/${id}`,
   CREATE_PROJECT: `${BASE_URL}/projects`,
   UPDATE_PROJECT: (id) => `${BASE_URL}/projects/${id}`,
+  UPDATE_PROJECT_STATUS: (id) => `${BASE_URL}/projects/${id}/status`,
   DELETE_PROJECT: (id) => `${BASE_URL}/projects/${id}`,
   GET_PROJECT_MEMBERS: (id) => `${BASE_URL}/projects/${id}/members`,
   ADD_PROJECT_MEMBER: (id) => `${BASE_URL}/projects/${id}/members`,
