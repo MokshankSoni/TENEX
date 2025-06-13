@@ -16,8 +16,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.HashMap;
 
 @Service
 public class ProjectService {
@@ -205,6 +207,30 @@ public class ProjectService {
 
                                         return convertToDTO(savedProject);
                                 });
+        }
+
+        /**
+         * Find all projects with minimal details (id, name, status) for the current
+         * tenant
+         *
+         * @return List of projects with minimal details
+         */
+        @Transactional(value = "tenantTransactionManager", readOnly = true)
+        public List<Map<String, Object>> findAllProjectsMinimal() {
+                if (!projectAuthorizationService.canViewAllProjects()) {
+                        throw new AccessDeniedException("You don't have permission to view all projects");
+                }
+
+                String tenantId = TenantContext.getCurrentTenant();
+                return projectRepository.findByTenantId(tenantId).stream()
+                                .map(project -> {
+                                        Map<String, Object> projectMap = new HashMap<>();
+                                        projectMap.put("id", project.getId());
+                                        projectMap.put("name", project.getName());
+                                        projectMap.put("status", project.getStatus());
+                                        return projectMap;
+                                })
+                                .collect(Collectors.toList());
         }
 
         private void updateProjectFromDTO(Project project, ProjectDTO dto) {

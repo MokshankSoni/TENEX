@@ -100,13 +100,7 @@ public class ProjectController {
         return ResponseEntity.ok(projectService.searchProjectsByName(name));
     }
 
-    /**
-     * Update project status
-     *
-     * @param id     Project ID
-     * @param status New project status
-     * @return Updated project if found and belongs to tenant, 404 otherwise
-     */
+
     @PatchMapping("/{id}/status")
     public ResponseEntity<ProjectDTO> updateProjectStatus(
             @PathVariable Long id,
@@ -118,5 +112,16 @@ public class ProjectController {
         return projectService.updateProjectStatus(id, newStatus)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+
+    /**
+     * Get all projects with minimal details (id, name, status) for the current
+     * tenant
+     *
+     * @return List of projects with minimal details
+     */
+    @GetMapping("/minimal")
+    public ResponseEntity<List<Map<String, Object>>> getAllProjectsMinimal() {
+        return ResponseEntity.ok(projectService.findAllProjectsMinimal());
     }
 }

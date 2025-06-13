@@ -41,7 +41,8 @@ export const PROJECT_ENDPOINTS = {
     `${BASE_URL}/projects/${projectId}/members/${userId}`,
   GET_PROJECT_MILESTONES: (id) => `${BASE_URL}/milestones/project/${id}`,
   CREATE_MILESTONE: `${BASE_URL}/milestones`,
-  GET_ATTACHMENT_DOWNLOAD: 'http://localhost:8080/api/attachments'
+  GET_ATTACHMENT_DOWNLOAD: 'http://localhost:8080/api/attachments',
+  GET_PROJECTS_MINIMAL: `${BASE_URL}/projects/minimal`
 };
 
 // Task endpoints
