@@ -1585,7 +1585,7 @@ input[type="file"]::-webkit-file-upload-button:hover {
 
 .confirm-button.primary {
   background-color: #4CAF50;
-  color: white;
+  color: rgb(134, 2, 2);
 }
 
 .confirm-button.primary:hover {

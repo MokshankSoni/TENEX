@@ -158,15 +158,12 @@ const ProjectDashboard = () => {
       // Auto-dismiss success message after 2 seconds
       setTimeout(() => {
         setSuccess(null);
-      }, 2000);
+      }, 1200);
     } catch (err) {
       console.error('Error updating project status:', err);
       setError('Failed to update project status. Please try again.');
 
-      // Auto-dismiss error message after 2 seconds
-      setTimeout(() => {
-        setError(null);
-      }, 2000);
+
     }
   };
 
@@ -318,6 +315,13 @@ const ProjectDashboard = () => {
           dueDate: '',
           completed: false
         });
+
+        setSuccess('Milestone added successfuly');
+
+        // Auto-dismiss success message after 2 seconds
+              setTimeout(() => {
+                setSuccess(null);
+              }, 1200);
       }
     } catch (err) {
       console.error('Error creating milestone:', err);
@@ -378,6 +382,13 @@ const ProjectDashboard = () => {
         setIsAddAttachmentPopupOpen(false);
         setSelectedFile(null);
         setSelectedTaskId(null);
+
+        setSuccess('Attchment added successfuly');
+
+                // Auto-dismiss success message after 2 seconds
+                      setTimeout(() => {
+                        setSuccess(null);
+                      }, 1200);
       }
     } catch (err) {
       console.error('Error uploading attachment:', err);
@@ -473,6 +484,13 @@ const ProjectDashboard = () => {
       
       // Clean up the URL
       window.URL.revokeObjectURL(url);
+
+      setSuccess('Attachment downloaded successfuly');
+
+        // Auto-dismiss success message after 2 seconds
+              setTimeout(() => {
+                setSuccess(null);
+              }, 1200);
     } catch (error) {
       console.error('Error downloading attachment:', error);
       if (error.response) {
@@ -591,15 +609,6 @@ const ProjectDashboard = () => {
         roleInProject: roleInProject
       };
 
-      console.log('Sending request to add member:', {
-        url: AUTH_ENDPOINTS.ADD_MEMBER,
-        payload,
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'X-TenantID': tenantId
-        }
-      });
-
       // Make the API call to add the user to the project
       const response = await axios.post(AUTH_ENDPOINTS.ADD_MEMBER, payload, {
         headers: {
@@ -609,6 +618,13 @@ const ProjectDashboard = () => {
         }
       });
 
+      setSuccess('Members added successfuly');
+
+        // Auto-dismiss success message after 2 seconds
+              setTimeout(() => {
+                setSuccess(null);
+              }, 1200);
+
       console.log('Add member response:', response.data);
 
       // Close the popup after successful addition
@@ -616,9 +632,7 @@ const ProjectDashboard = () => {
       
       // Refresh project details to show the new member
       await fetchProjectDetails();
-      
-      // Show success message
-      setSuccess('Member added successfully');
+
     } catch (err) {
       console.error('Error adding member:', {
         message: err.message,
@@ -674,6 +688,13 @@ const ProjectDashboard = () => {
         }
       });
 
+      setSuccess('Member removed successfuly');
+
+        // Auto-dismiss success message after 2 seconds
+              setTimeout(() => {
+                setSuccess(null);
+              }, 1200);
+
       // Update the local state to remove the member
       setProjectData(prev => ({
         ...prev,
@@ -682,7 +703,7 @@ const ProjectDashboard = () => {
         )
       }));
 
-      setSuccess('Team member removed successfully');
+      //setSuccess('Team member removed successfully');
     } catch (error) {
       console.error('Error removing team member:', error);
       setError(error.response?.data?.message || 'Failed to remove team member');
@@ -1371,7 +1392,7 @@ const ProjectDashboard = () => {
               <p>Are you sure you want to remove <strong>{memberToRemove.username}</strong> from this project?</p>
               <div className="confirmation-actions">
                 <button 
-                  className="confirm-button danger" 
+                  className="confirm-button primary" 
                   onClick={handleConfirmRemoveMember}
                 >
                   Yes, Remove
