@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
-import { FaProjectDiagram, FaUsers, FaTasks, FaChartPie, FaPlus, FaUserPlus, FaClipboardList, FaUserCircle } from 'react-icons/fa';
+import { FaProjectDiagram, FaUsers, FaTasks, FaChartPie, FaPlus, FaUserPlus, FaClipboardList, FaUserCircle, FaTimes, FaSearch, FaEnvelope, FaUserTag, FaTrash } from 'react-icons/fa';
 import ProjectPopup from '../ProjectPopup/ProjectPopup';
+import TaskReportPopUp from './TaskReportPopUp/TaskReportPopUp';
+import DeleteProjectPopup from './DeleteProjectPopUp/DeleteProjectPopup';
 import { getToken, getTenantId, getUserData } from '../../../utils/storageUtils';
-import { PROJECT_ENDPOINTS } from '../../../config/apiEndpoints';
+import { PROJECT_ENDPOINTS, AUTH_ENDPOINTS, TASK_ENDPOINTS } from '../../../config/apiEndpoints';
 import axios from 'axios';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
@@ -20,6 +22,13 @@ const TenantAdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [projects, setProjects] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [showUsersPopup, setShowUsersPopup] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedRole, setSelectedRole] = useState('all');
+  const [showTaskReport, setShowTaskReport] = useState(false);
+  const [showDeleteProject, setShowDeleteProject] = useState(false);
 
   // Storage utilities
   const token = getToken();
@@ -28,6 +37,8 @@ const TenantAdminDashboard = () => {
 
   useEffect(() => {
     fetchProjects();
+    fetchUsers();
+    fetchTasks();
   }, []);
 
   const fetchProjects = async () => {
@@ -67,6 +78,66 @@ const TenantAdminDashboard = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      if (!token) {
+        console.error('Authentication token not found');
+        return;
+      }
+
+      if (!tenantId) {
+        console.error('Tenant ID not found');
+        return;
+      }
+
+      const response = await axios.get(AUTH_ENDPOINTS.GET_ALL_USERS, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'X-TenantID': tenantId
+        }
+      });
+
+      setUsers(response.data);
+    } catch (err) {
+      console.error('Error fetching users:', err);
+    }
+  };
+
+  const fetchTasks = async () => {
+    try {
+      if (!token) {
+        console.error('Authentication token not found');
+        return;
+      }
+
+      if (!tenantId) {
+        console.error('Tenant ID not found');
+        return;
+      }
+
+      const response = await axios.get(TASK_ENDPOINTS.GET_TASKS, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'X-TenantID': tenantId
+        }
+      });
+
+      console.log('Tasks response:', response.data);
+      setTasks(response.data);
+    } catch (err) {
+      console.error('Error fetching tasks:', err);
+      if (err.response?.status === 401) {
+        setError('Session expired. Please login again.');
+      } else if (err.response?.status === 403) {
+        setError('You do not have permission to view tasks.');
+      } else {
+        setError('Failed to fetch tasks. Please try again.');
+      }
     }
   };
 
@@ -208,6 +279,85 @@ const TenantAdminDashboard = () => {
     radius: '80%'
   };
 
+  const handleCloseUsersPopup = () => {
+    setShowUsersPopup(false);
+    setSearchQuery('');
+    setSelectedRole('all');
+  };
+
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleRoleFilter = (e) => {
+    setSelectedRole(e.target.value);
+  };
+
+  const getFilteredUsers = () => {
+    return users.filter(user => {
+      const matchesSearch = user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          user.email.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesRole = selectedRole === 'all' || 
+                         user.roles.some(role => role.toLowerCase().includes(selectedRole.toLowerCase()));
+      return matchesSearch && matchesRole;
+    });
+  };
+
+  const formatRole = (roles) => {
+    return roles.map(role => {
+      const roleName = role.replace('ROLE_', '').toLowerCase();
+      switch (roleName) {
+        case 'tenant_admin':
+          return 'Tenant Admin';
+        case 'project_manager':
+          return 'Project Manager';
+        case 'team_member':
+          return 'Team Member';
+        case 'client':
+          return 'Client';
+        default:
+          return roleName;
+      }
+    }).join(', ');
+  };
+
+  const getRoleColor = (roles) => {
+    const role = roles[0]?.toLowerCase() || '';
+    if (role.includes('tenant_admin')) return '#4CAF50'; // Green
+    if (role.includes('project_manager')) return '#2196F3'; // Blue
+    if (role.includes('team_member')) return '#FF9800'; // Orange
+    if (role.includes('client')) return '#9C27B0'; // Purple
+    return '#718096'; // Gray
+  };
+
+  const filteredUsers = getFilteredUsers();
+
+  const handleDeleteProject = async (projectId) => {
+    try {
+      const token = getToken();
+      const tenantId = getTenantId();
+      
+      if (!token || !tenantId) {
+        setError('Authentication token or tenant ID is missing');
+        return;
+      }
+
+      await axios.delete(`${PROJECT_ENDPOINTS.DELETE_PROJECT}/${projectId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'X-Tenant-ID': tenantId
+        }
+      });
+
+      // Remove the deleted project from the state
+      setProjects(projects.filter(project => project.id !== projectId));
+      setShowDeleteProject(false);
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      setError('Failed to delete project');
+    }
+  };
+
   return (
     <div className="dashboard-container">
       {/* Top Navigation Bar */}
@@ -255,28 +405,26 @@ const TenantAdminDashboard = () => {
                 </div>
               </div>
 
-              <div className="kpi-card" onClick={() => window.location.href = '/users'}>
+              <div className="kpi-card" onClick={() => setShowUsersPopup(true)}>
                 <div className="kpi-icon">
                   <FaUsers />
                 </div>
                 <div className="kpi-content">
-                  <h3>Users</h3>
-                  <div className="kpi-value">{dashboardData.totalUsers}</div>
-                  <div className="kpi-subtext">
-                    {dashboardData.userBreakdown.projectManagers} PMs, {dashboardData.userBreakdown.teamMembers} TMs, {dashboardData.userBreakdown.clients} Clients
-                  </div>
+                  <h3>Members</h3>
+                  <span className="kpi-value">{users.length}</span>
+                  <p className="kpi-subtext">View all team members</p>
                 </div>
               </div>
 
-              <div className="kpi-card" onClick={() => window.location.href = '/tasks'}>
+              <div className="kpi-card" onClick={() => setShowTaskReport(true)}>
                 <div className="kpi-icon">
                   <FaTasks />
                 </div>
                 <div className="kpi-content">
                   <h3>Open Tasks</h3>
-                  <div className="kpi-value">{dashboardData.openTasks}</div>
+                  <div className="kpi-value">{tasks.length}</div>
                   <div className="kpi-subtext">
-                    <span className="overdue">{dashboardData.overdueTasks} Overdue</span> / {dashboardData.dueThisWeek} Due This Week
+                    <span className="overdue">{tasks.filter(task => task.status.toUpperCase() === 'TODO').length} To Do</span> / {tasks.filter(task => task.status.toUpperCase() === 'IN_PROGRESS').length} In Progress
                   </div>
                 </div>
               </div>
@@ -305,11 +453,11 @@ const TenantAdminDashboard = () => {
                   >
                     <FaPlus /> Project
                   </button>
-                  <button className="action-button">
-                    <FaUserPlus /> Add New User
+                  <button className="action-delete" onClick={() => setShowDeleteProject(true)}>
+                    <FaTrash /> Project
                   </button>
                   <button className="action-button">
-                    <FaClipboardList /> View All Assignments
+                    <FaClipboardList /> Project Report
                   </button>
                 </div>
               </div>
@@ -335,9 +483,108 @@ const TenantAdminDashboard = () => {
         )}
       </div>
 
+      {showUsersPopup && (
+        <div className="popup-overlay">
+          <div className="add-member-popup">
+            <div className="popup-header">
+              <h2>Members</h2>
+              <button className="close-button" onClick={handleCloseUsersPopup}>
+                <FaTimes />
+              </button>
+            </div>
+
+            <div className="popup-content">
+              <div className="filters">
+                <div className="search-box">
+                  <FaSearch className="search-icon" />
+                  <input
+                    type="text"
+                    placeholder="Search users..."
+                    value={searchQuery}
+                    onChange={handleSearch}
+                  />
+                </div>
+
+                <select
+                  className="role-filter"
+                  value={selectedRole}
+                  onChange={handleRoleFilter}
+                >
+                  <option value="all">All Roles</option>
+                  <option value="ROLE_TENANT_ADMIN">Tenant Admin</option>
+                  <option value="ROLE_PROJECT_MANAGER">Project Manager</option>
+                  <option value="ROLE_TEAM_MEMBER">Team Member</option>
+                  <option value="ROLE_CLIENT">Client</option>
+                </select>
+              </div>
+
+              {loading ? (
+                <div className="loading">
+                  <div className="spinner"></div>
+                  <p>Loading users...</p>
+                </div>
+              ) : error ? (
+                <div className="error-message">
+                  <p>{error}</p>
+                  <button onClick={fetchUsers}>Retry</button>
+                </div>
+              ) : filteredUsers.length === 0 ? (
+                <div className="no-users-message">
+                  <FaUsers className="no-users-icon" />
+                  <p>No users found matching your criteria.</p>
+                </div>
+              ) : (
+                <div className="users-list">
+                  {filteredUsers.map((user) => (
+                    <div key={user.id} className="user-card">
+                      <div className="user-avatar">
+                        {user.username.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="user-info">
+                        <div className="user-header">
+                          <h3>{user.username}</h3>
+                          {user.roles.map((role, index) => (
+                            <span
+                              key={index}
+                              className="role-badge"
+                              style={{ backgroundColor: getRoleColor(user.roles) }}
+                            >
+                              {formatRole([role])}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="user-details">
+                          <div className="detail-item">
+                            <FaEnvelope className="detail-icon" />
+                            <span>{user.email}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <TaskReportPopUp 
+        isOpen={showTaskReport}
+        onClose={() => setShowTaskReport(false)}
+        tasks={tasks}
+      />
+
       <ProjectPopup 
         isOpen={isProjectPopupOpen} 
         onClose={() => setIsProjectPopupOpen(false)} 
+      />
+
+      <DeleteProjectPopup
+        isOpen={showDeleteProject}
+        onClose={() => setShowDeleteProject(false)}
+        projects={projects}
+        onDelete={handleDeleteProject}
       />
     </div>
   );
