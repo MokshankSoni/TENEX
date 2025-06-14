@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
-import { FaProjectDiagram, FaUsers, FaTasks, FaChartPie, FaPlus, FaUserPlus, FaClipboardList, FaUserCircle, FaTimes, FaSearch, FaEnvelope, FaUserTag, FaTrash } from 'react-icons/fa';
+import { FaProjectDiagram, FaUsers, FaTasks, FaChartPie, FaPlus, FaUserPlus, FaClipboardList, FaUserCircle, FaTimes, FaSearch, FaEnvelope, FaUserTag, FaTrash, FaChartBar } from 'react-icons/fa';
 import ProjectPopup from '../ProjectPopup/ProjectPopup';
 import TaskReportPopUp from './TaskReportPopUp/TaskReportPopUp';
 import DeleteProjectPopup from './DeleteProjectPopUp/DeleteProjectPopup';
+import ActivityLogsPopup from './ActivityLogsPopup/ActivityLogsPopup';
+import ProjectReportPopUp from './ProjectReportPopUp/ProjectReportPopUp';
 import { getToken, getTenantId, getUserData } from '../../../utils/storageUtils';
-import { PROJECT_ENDPOINTS, AUTH_ENDPOINTS, TASK_ENDPOINTS } from '../../../config/apiEndpoints';
+import { PROJECT_ENDPOINTS, AUTH_ENDPOINTS, TASK_ENDPOINTS, ANALYTICS_ENDPOINTS, ACTIVITY_LOG_ENDPOINTS } from '../../../config/apiEndpoints';
 import axios from 'axios';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
@@ -29,6 +31,9 @@ const TenantAdminDashboard = () => {
   const [selectedRole, setSelectedRole] = useState('all');
   const [showTaskReport, setShowTaskReport] = useState(false);
   const [showDeleteProject, setShowDeleteProject] = useState(false);
+  const [showActivityLogs, setShowActivityLogs] = useState(false);
+  const [activityLogs, setActivityLogs] = useState([]);
+  const [showProjectReport, setShowProjectReport] = useState(false);
 
   // Storage utilities
   const token = getToken();
@@ -39,6 +44,7 @@ const TenantAdminDashboard = () => {
     fetchProjects();
     fetchUsers();
     fetchTasks();
+    fetchActivityLogs();
   }, []);
 
   const fetchProjects = async () => {
@@ -127,7 +133,6 @@ const TenantAdminDashboard = () => {
         }
       });
 
-      console.log('Tasks response:', response.data);
       setTasks(response.data);
     } catch (err) {
       console.error('Error fetching tasks:', err);
@@ -138,6 +143,20 @@ const TenantAdminDashboard = () => {
       } else {
         setError('Failed to fetch tasks. Please try again.');
       }
+    }
+  };
+
+  const fetchActivityLogs = async () => {
+    try {
+      const response = await axios.get(ACTIVITY_LOG_ENDPOINTS.GET_ACTIVITY_LOGS, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'X-TenantId': tenantId
+        }
+      });
+      setActivityLogs(response.data);
+    } catch (error) {
+      console.error('Error fetching activity logs:', error);
     }
   };
 
@@ -358,29 +377,56 @@ const TenantAdminDashboard = () => {
     }
   };
 
+  const getUserName = (userId) => {
+    const user = users.find(u => u.id === userId);
+    return user ? user.username : 'Unknown User';
+  };
+
+  const getTimeAgo = (timestamp) => {
+    const now = new Date();
+    const activityTime = new Date(timestamp);
+    const diffInHours = Math.floor((now - activityTime) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) {
+      const diffInMinutes = Math.floor((now - activityTime) / (1000 * 60));
+      return `${diffInMinutes} minutes ago`;
+    } else if (diffInHours < 24) {
+      return `${diffInHours} hours ago`;
+    } else {
+      const diffInDays = Math.floor(diffInHours / 24);
+      return `${diffInDays} days ago`;
+    }
+  };
+
+  const formatAction = (action) => {
+    return action
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   return (
     <div className="dashboard-container">
-      {/* Top Navigation Bar */}
-      <div className="dashboard-header">
-        <div className="header-left">
-          <h1 className="tenant-id-display">
-            <span className="tenant-label">TENANT</span>
-            <span className="tenant-value">{tenantId?.toUpperCase() || 'NOT FOUND'}</span>
-          </h1>
-        </div>
-        <div className="header-right">
-          <div className="user-info">
-            <span className="user-role">Tenant Admin</span>
-            <span className="user-name">{userData?.username || 'Guest'}</span>
+        <div className="dashboard-header">
+          <div className="header-left">
+            <h1 className="tenant-id-display">
+              <span className="tenant-label">TENANT</span>
+              <span className="tenant-value">{tenantId?.toUpperCase() || 'NOT FOUND'}</span>
+            </h1>
           </div>
-          <div className="profile-icon" onClick={handleProfileClick}>
-            <FaUserCircle size={32} />
+          <div className="header-right">
+            <div className="user-info">
+              <span className="user-role">Tenant Admin</span>
+              <span className="user-name">{userData?.username || 'Guest'}</span>
+            </div>
+            <div className="profile-icon" onClick={handleProfileClick}>
+              <FaUserCircle size={32} />
+            </div>
+            <button className="logout-button" onClick={signOut}>
+              Logout
+            </button>
           </div>
-          <button className="logout-button" onClick={signOut}>
-            Logout
-          </button>
         </div>
-      </div>
 
       {/* Main Dashboard Content */}
       <div className="dashboard-content">
@@ -456,7 +502,10 @@ const TenantAdminDashboard = () => {
                   <button className="action-delete" onClick={() => setShowDeleteProject(true)}>
                     <FaTrash /> Project
                   </button>
-                  <button className="action-button">
+                  <button 
+                    className="action-button"
+                    onClick={() => setShowProjectReport(true)}
+                  >
                     <FaClipboardList /> Project Report
                   </button>
                 </div>
@@ -464,20 +513,28 @@ const TenantAdminDashboard = () => {
             </div>
 
             {/* Row 3: Recent Activity */}
-            <div className="activity-card">
-              <h3>Recent Activity</h3>
+            <div className="recent-activity">
+              <h2>Recent Activity</h2>
               <div className="activity-list">
-                {dashboardData.recentActivity.map((activity, index) => (
-                  <div key={index} className="activity-item">
-                    <div className="activity-content">
-                      <span className="activity-user">{activity.user}</span>
-                      <span className="activity-action">{activity.action}</span>
+                {[...activityLogs]
+                  .reverse()
+                  .slice(0, 5)
+                  .map((log) => (
+                    <div key={log.id} className="activity-item">
+                      <div className="activity-info">
+                        <span className="user-name">{getUserName(log.userId)}</span>
+                        <span className="activity-action">{formatAction(log.action)}</span>
+                        <span className="activity-time">{getTimeAgo(log.timestamp)}</span>
+                      </div>
                     </div>
-                    <span className="activity-time">{activity.time}</span>
-                  </div>
-                ))}
+                  ))}
               </div>
-              <button className="view-all-button">View All Activity</button>
+              <button 
+                className="view-all-button"
+                onClick={() => setShowActivityLogs(true)}
+              >
+                View All Activity
+              </button>
             </div>
           </>
         )}
@@ -496,10 +553,10 @@ const TenantAdminDashboard = () => {
             <div className="popup-content">
               <div className="filters">
                 <div className="search-box">
-                  <FaSearch className="search-icon" />
+
                   <input
                     type="text"
-                    placeholder="Search users..."
+                    placeholder="Search"
                     value={searchQuery}
                     onChange={handleSearch}
                   />
@@ -586,6 +643,25 @@ const TenantAdminDashboard = () => {
         projects={projects}
         onDelete={handleDeleteProject}
       />
+
+      <ProjectReportPopUp
+        isOpen={showProjectReport}
+        onClose={() => setShowProjectReport(false)}
+        projects={projects}
+      />
+
+      {showActivityLogs && (
+        <ActivityLogsPopup
+          isOpen={showActivityLogs}
+          onClose={() => setShowActivityLogs(false)}
+          activityLogs={activityLogs}
+          users={users}
+          getUserName={getUserName}
+          getTimeAgo={getTimeAgo}
+          formatAction={formatAction}
+          onLogsDeleted={fetchActivityLogs}
+        />
+      )}
     </div>
   );
 };

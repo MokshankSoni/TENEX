@@ -71,4 +71,10 @@ public class ActivityLogController {
         activityLogService.deleteActivityLog(id);
         return ResponseEntity.noContent().build();
     }
+
+    @DeleteMapping("/oldest")
+    public ResponseEntity<Void> deleteOldestActivityLogs() {
+        activityLogService.deleteOldestActivityLogs(20);
+        return ResponseEntity.noContent().build();
+    }
 }

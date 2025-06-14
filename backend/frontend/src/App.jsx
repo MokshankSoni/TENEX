@@ -1,6 +1,8 @@
 // src/App.js
 import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider } from './context/AuthenticationContext';
 import { routes } from './config/routes';
 import './App.css';
@@ -31,6 +33,7 @@ const App = () => {
             ))}
           </Routes>
         </Suspense>
+        <ToastContainer />
       </AuthProvider>
     </Router>
   );

@@ -189,7 +189,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 16px;
 }
 
 .section-header h2 {
@@ -197,6 +197,26 @@
   font-size: 1.25rem;
   color: #1a365d;
   font-weight: 600;
+}
+
+.update-project-button {
+  background-color: #4299e1;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.update-project-button:hover {
+  background-color: #3182ce;
+}
+
+.update-project-button:active {
+  background-color: #2b6cb0;
 }
 
 .project-description {
@@ -1585,7 +1605,7 @@ input[type="file"]::-webkit-file-upload-button:hover {
 
 .confirm-button.primary {
   background-color: #4CAF50;
-  color: rgb(134, 2, 2);
+  color: white;
 }
 
 .confirm-button.primary:hover {

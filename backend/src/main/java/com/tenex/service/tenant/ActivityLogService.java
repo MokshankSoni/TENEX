@@ -106,4 +106,18 @@ public class ActivityLogService {
         }
         activityLogRepository.deleteById(id);
     }
+
+    @Transactional(value = "tenantTransactionManager")
+    public void deleteOldestActivityLogs(int count) {
+        if (!authorizationService.canDeleteActivityLog()) {
+            throw new AccessDeniedException("You don't have permission to delete activity logs");
+        }
+
+        List<ActivityLog> oldestLogs = activityLogRepository.findAll().stream()
+                .sorted((a, b) -> a.getTimestamp().compareTo(b.getTimestamp()))
+                .limit(count)
+                .toList();
+
+        oldestLogs.forEach(log -> activityLogRepository.deleteById(log.getId()));
+    }
 }

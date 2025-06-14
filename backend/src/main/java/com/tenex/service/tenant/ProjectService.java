@@ -228,6 +228,8 @@ public class ProjectService {
                                         projectMap.put("id", project.getId());
                                         projectMap.put("name", project.getName());
                                         projectMap.put("status", project.getStatus());
+                                        projectMap.put("start_date",project.getStartDate());
+                                        projectMap.put("end_date",project.getEndDate());
                                         return projectMap;
                                 })
                                 .collect(Collectors.toList());

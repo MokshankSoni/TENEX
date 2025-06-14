@@ -7,6 +7,7 @@ import { useAuth } from '../../../hooks/useAuth';
 import { getToken, getTenantId } from '../../../utils/storageUtils';
 import './ProjectDashboard.css';
 import AddMemberPopUp from './AddMemberPopUp/AddMemberPopUp';
+import UpdateProjectPopup from './UpdateProjectPopup/UpdateProjectPopup';
 
 const ProjectDashboard = () => {
   const navigate = useNavigate();
@@ -57,6 +58,7 @@ const ProjectDashboard = () => {
   const [isStatusPopupOpen, setIsStatusPopupOpen] = useState(false);
   const [isConfirmPopupOpen, setIsConfirmPopupOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(null);
+  const [showUpdateProject, setShowUpdateProject] = useState(false);
 
   useEffect(() => {
     fetchProjectDetails();
@@ -743,6 +745,11 @@ const ProjectDashboard = () => {
     }
   };
 
+  const handleProjectUpdate = (updatedProject) => {
+    setProjectData(updatedProject);
+    setShowUpdateProject(false);
+  };
+
   if (loading) {
     return (
       <div className="loading-state">
@@ -802,6 +809,12 @@ const ProjectDashboard = () => {
         <div className="overview-section">
           <div className="section-header">
             <h2>Project Overview</h2>
+            <button 
+              className="update-project-button"
+              onClick={() => setShowUpdateProject(true)}
+            >
+              Update Project
+            </button>
           </div>
           <p className="project-description">{projectData.description}</p>
         </div>
@@ -1505,6 +1518,15 @@ const ProjectDashboard = () => {
             <FaTimes />
           </button>
         </div>
+      )}
+
+      {showUpdateProject && (
+        <UpdateProjectPopup
+          isOpen={showUpdateProject}
+          onClose={() => setShowUpdateProject(false)}
+          projectData={projectData}
+          onProjectUpdate={handleProjectUpdate}
+        />
       )}
     </div>
   );

@@ -77,7 +77,8 @@ export const ACTIVITY_LOG_ENDPOINTS = {
   GET_ACTIVITY_LOG: (id) => `${BASE_URL}/activity-logs/${id}`,
   GET_USER_ACTIVITY_LOGS: (userId) => `${BASE_URL}/activity-logs/user/${userId}`,
   GET_PROJECT_ACTIVITY_LOGS: (projectId) => 
-    `${BASE_URL}/activity-logs/project/${projectId}`
+    `${BASE_URL}/activity-logs/project/${projectId}`,
+  DELETE_OLDEST_LOGS: `${BASE_URL}/activity-logs/oldest`
 };
 
 // Analytics endpoints
