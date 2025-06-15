@@ -467,7 +467,7 @@ const TenantAdminDashboard = () => {
                   <FaTasks />
                 </div>
                 <div className="kpi-content">
-                  <h3>Open Tasks</h3>
+                  <h3>Task Analysis</h3>
                   <div className="kpi-value">{tasks.length}</div>
                   <div className="kpi-subtext">
                     <span className="overdue">{tasks.filter(task => task.status.toUpperCase() === 'TODO').length} To Do</span> / {tasks.filter(task => task.status.toUpperCase() === 'IN_PROGRESS').length} In Progress

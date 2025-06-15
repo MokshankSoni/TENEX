@@ -102,4 +102,9 @@ export const NOTIFICATION_ENDPOINTS = {
   MARK_NOTIFICATION_READ: (id) => `${BASE_URL}/notifications/${id}/read`,
   MARK_ALL_NOTIFICATIONS_READ: `${BASE_URL}/notifications/read-all`,
   DELETE_NOTIFICATION: (id) => `${BASE_URL}/notifications/${id}`
-}; 
+};
+
+// User Project Assignment Endpoints
+export const USER_PROJECT_ASSIGNMENT = {
+    MY_ASSIGNMENTS: `${BASE_URL}/assignments/my-assignments`
+};
