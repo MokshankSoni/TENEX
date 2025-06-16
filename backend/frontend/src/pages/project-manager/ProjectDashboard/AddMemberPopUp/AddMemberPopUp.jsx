@@ -30,29 +30,24 @@ const AddMemberPopUp = ({ onClose, onAddMember, existingAssignments = [] }) => {
       const token = getToken();
       const tenantId = getTenantId();
       
-      const response = await axios.get(AUTH_ENDPOINTS.GET_ALL_USERS, {
+      const response = await axios.get(AUTH_ENDPOINTS.GET_ALL_TEAM_MEMBERS, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'X-Tenant-ID': tenantId
         }
       });
+
       
       // Filter out users who are already assigned to the project
       // The userAssignments array contains objects with username and roleInProject
       const assignedUsernames = existingAssignments.map(assignment => {
-        console.log('Assignment:', assignment);
         return assignment.username;
       });
       
-//       console.log('Assigned usernames:', assignedUsernames);
-      
       const availableUsers = response.data.filter(user => {
         const isAssigned = assignedUsernames.includes(user.username);
-        console.log(`User ${user.username} is assigned: ${isAssigned}`);
         return !isAssigned;
       });
-      
-//      console.log('Available users after filtering:', availableUsers);
       
       setUsers(availableUsers);
       setLoading(false);

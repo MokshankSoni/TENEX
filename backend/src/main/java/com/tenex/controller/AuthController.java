@@ -227,4 +227,34 @@ public class AuthController {
 
         return ResponseEntity.ok(users);
     }
+
+    @GetMapping("/users/team-members")
+    @PreAuthorize("hasAnyRole('TENANT_ADMIN', 'PROJECT_MANAGER')")
+    public ResponseEntity<?> getTeamMembers() {
+        String currentTenant = TenantContext.getCurrentTenant();
+
+        List<UserTenantMapping> userMappings = userTenantMappingRepository.findByTenantId(currentTenant);
+
+        List<UserResponse> teamMembers = userMappings.stream()
+                .map(mapping -> {
+                    User user = mapping.getUser();
+                    Set<String> roles = user.getRoles().stream()
+                            .map(role -> role.getName().name())
+                            .collect(Collectors.toSet());
+
+                    return new UserResponse(
+                            user.getId(),
+                            mapping.getUsername(),
+                            mapping.getEmail(),
+                            roles,
+                            mapping.getTenantAdmin());
+                })
+                .filter(userResponse -> {
+                    Set<String> roles = userResponse.getRoles();
+                    return roles.contains("ROLE_TEAM_MEMBER") || roles.contains("ROLE_CLIENT");
+                })
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(teamMembers);
+    }
 }

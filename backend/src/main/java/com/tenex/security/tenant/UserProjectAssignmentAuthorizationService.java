@@ -19,7 +19,7 @@ public class UserProjectAssignmentAuthorizationService {
                 .map(authority -> authority.getAuthority())
                 .orElse("");
 
-        return role.equals("ROLE_TENANT_ADMIN");
+        return role.equals("ROLE_TENANT_ADMIN") || role.equals("ROLE_PROJECT_MANAGER");
     }
 
     public boolean canUpdateAssignment() {
@@ -33,7 +33,7 @@ public class UserProjectAssignmentAuthorizationService {
                 .map(authority -> authority.getAuthority())
                 .orElse("");
 
-        return role.equals("ROLE_TENANT_ADMIN");
+        return role.equals("ROLE_TENANT_ADMIN") || role.equals("ROLE_PROJECT_MANAGER");
     }
 
     public boolean canDeleteAssignment() {
@@ -47,7 +47,7 @@ public class UserProjectAssignmentAuthorizationService {
                 .map(authority -> authority.getAuthority())
                 .orElse("");
 
-        return role.equals("ROLE_TENANT_ADMIN");
+        return role.equals("ROLE_TENANT_ADMIN") || role.equals("ROLE_PROJECT_MANAGER");
     }
 
     public boolean canViewAssignments() {
@@ -93,7 +93,7 @@ public class UserProjectAssignmentAuthorizationService {
                 .map(authority -> authority.getAuthority())
                 .orElse("");
 
-        return role.equals("ROLE_TENANT_ADMIN");
+        return role.equals("ROLE_TENANT_ADMIN") || role.equals("ROLE_PROJECT_MANAGER");
     }
 
     public boolean canViewMyAssignments() {

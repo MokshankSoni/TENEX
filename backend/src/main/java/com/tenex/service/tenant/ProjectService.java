@@ -102,7 +102,7 @@ public class ProjectService {
          */
         @Transactional(value = "tenantTransactionManager")
         public Optional<ProjectDTO> updateProject(Long id, ProjectDTO projectDTO) {
-                if (!projectAuthorizationService.canViewProject(id)) {
+                if (!projectAuthorizationService.canUpdateProject(id)) {
                         throw new AccessDeniedException("You don't have permission to update this project");
                 }
 
@@ -192,7 +192,7 @@ public class ProjectService {
          */
         @Transactional(value = "tenantTransactionManager")
         public Optional<ProjectDTO> updateProjectStatus(Long id, String status) {
-                if (!projectAuthorizationService.canUpdateProject(id)) {
+                if (!projectAuthorizationService.canUpdateProjectStatus(id)) {
                         throw new AccessDeniedException("You don't have permission to update this project's status");
                 }
 

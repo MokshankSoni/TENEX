@@ -114,4 +114,18 @@ public class ProjectAuthorizationService {
 
         return role.equals("ROLE_TENANT_ADMIN") || role.equals("ROLE_PROJECT_MANAGER");
     }
+
+    public boolean canUpdateProjectStatus(Long projectId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return false;
+        }
+
+        String role = auth.getAuthorities().stream()
+                .findFirst()
+                .map(authority -> authority.getAuthority())
+                .orElse("");
+
+        return role.equals("ROLE_TENANT_ADMIN");
+    }
 }

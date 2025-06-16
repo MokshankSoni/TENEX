@@ -12,6 +12,7 @@ export const AUTH_ENDPOINTS = {
   REFRESH_TOKEN: `${BASE_URL}/auth/refresh-token`,
   VERIFY_TOKEN: `${BASE_URL}/auth/verify-token`,
   GET_ALL_USERS: `${BASE_URL}/auth/users`,
+  GET_ALL_TEAM_MEMBERS: `${BASE_URL}/auth/users/team-members`,
   ADD_MEMBER: `${BASE_URL}/assignments`,
   REMOVE_MEMBER: (username, projectId) => `${BASE_URL}/assignments/${username}/${projectId}`
 };
@@ -106,5 +107,7 @@ export const NOTIFICATION_ENDPOINTS = {
 
 // User Project Assignment Endpoints
 export const USER_PROJECT_ASSIGNMENT = {
+    ADD_MEMBER: `${BASE_URL}/assignments`,
+    REMOVE_MEMBER: (username, projectId) => `${BASE_URL}/assignments/${username}/${projectId}`,
     MY_ASSIGNMENTS: `${BASE_URL}/assignments/my-assignments`
 };
