@@ -280,6 +280,8 @@
   padding: 1.5rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   border: 1px solid #e6f0ff;
+  grid-column: 1 / -1;
+  margin-top: 2rem;
 }
 
 .milestones-list {
@@ -696,11 +698,19 @@
 
 /* Tasks Section */
 .tasks-section {
-  background: #ffffff;
+  background: white;
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e6f0ff;
+  margin-bottom: 2rem;
+  grid-column: 1 / -1;
+}
+
+.tasks-overview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 1rem;
 }
 
 .tasks-list {
@@ -709,72 +719,96 @@
   gap: 1rem;
 }
 
-.task-card {
-  padding: 1.25rem;
-  border-radius: 8px;
-  background: #f0f7ff;
-  border: 1px solid #e6f0ff;
+.tasks-chart {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.task-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 0.75rem;
-}
-
-.task-header h3 {
-  margin: 0;
+.tasks-chart h3 {
+  margin: 0 0 1.5rem 0;
+  color: #1F2937;
   font-size: 1.1rem;
-  color: #1a365d;
   font-weight: 600;
 }
 
-.task-meta {
+.priority-filters {
   display: flex;
   gap: 0.75rem;
-  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
 }
 
-.priority-badge {
-  padding: 0.35rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
+.priority-filter {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid #E5E7EB;
+  background: white;
+  color: #4B5563;
+  font-size: 0.875rem;
   font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.priority-badge.high {
-  background-color: #fee2e2;
-  color: #dc2626;
+.priority-filter:hover {
+  background: #F9FAFB;
+  border-color: #D1D5DB;
 }
 
-.priority-badge.medium {
-  background-color: #fef3c7;
-  color: #d97706;
+.priority-filter.active {
+  color: white;
+  border: none;
 }
 
-.priority-badge.low {
-  background-color: #e6f4ea;
-  color: #34a853;
+.priority-filter.active.high {
+  background: #EF4444;
 }
 
-.status-badge {
-  padding: 0.35rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 500;
+.priority-filter.active.medium {
+  background: #F59E0B;
 }
 
-.status-badge.in_progress {
-  background-color: #e8f0fe;
-  color: #1a73e8;
+.priority-filter.active.low {
+  background: #10B981;
 }
 
-.task-description {
-  margin: 0;
-  font-size: 0.9rem;
-  color: #4a5568;
-  line-height: 1.5;
+.priority-filter:not(.active).high:hover {
+  background: #FEE2E2;
+  border-color: #EF4444;
+  color: #EF4444;
+}
+
+.priority-filter:not(.active).medium:hover {
+  background: #FEF3C7;
+  border-color: #F59E0B;
+  color: #F59E0B;
+}
+
+.priority-filter:not(.active).low:hover {
+  background: #D1FAE5;
+  border-color: #10B981;
+  color: #10B981;
+}
+
+.chart-container {
+  height: 300px;
+  position: relative;
+}
+
+/* Update dashboard content layout */
+.dashboard-content {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  padding: 2rem;
+}
+
+/* Move milestones section down */
+.milestones-section {
+  grid-column: 1 / -1;
+  margin-top: 2rem;
 }
 
 /* Responsive Design */
@@ -1277,75 +1311,102 @@ input[type="file"]::-webkit-file-upload-button:hover {
 .task-filters {
   display: flex;
   gap: 1rem;
-  margin-bottom: 1.5rem;
-  padding: 0 0.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
 }
 
 .search-container {
-  flex: 1;
   position: relative;
+  flex: 1;
+}
+
+.search-container input {
+  width: 100%;
+  padding: 0.5rem 1rem 0.5rem 2.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.search-container input:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
 }
 
 .search-icon {
   position: absolute;
-  left: 1rem;
+  left: 0.75rem;
   top: 50%;
   transform: translateY(-50%);
   color: #718096;
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
-.search-input {
-  width: 100%;
-  padding: 0.75rem 1rem 0.75rem 2.5rem;
+.status-filter,
+.priority-filter {
+  padding: 0.5rem 1rem;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
-  font-size: 0.95rem;
-  color: #2d3748;
-  transition: all 0.2s ease;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: #4a90e2;
-  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
-}
-
-.search-input::placeholder {
-  color: #a0aec0;
-}
-
-.status-filter {
-  min-width: 150px;
-  padding: 0.75rem 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  background-color: #ffffff;
-  color: #2d3748;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  background-color: white;
+  color: #4a5568;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.status-filter:hover {
-  border-color: #4a90e2;
-}
-
-.status-filter:focus {
+.status-filter:focus,
+.priority-filter:focus {
   outline: none;
   border-color: #4a90e2;
-  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
 }
 
-.no-tasks-message {
-  grid-column: 1 / -1;
+.priority-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.priority-badge.high {
+  background-color: #FEE2E2;
+  color: #DC2626;
+}
+
+.priority-badge.medium {
+  background-color: #FEF3C7;
+  color: #D97706;
+}
+
+.priority-badge.low {
+  background-color: #DCFCE7;
+  color: #16A34A;
+}
+
+.no-results-message {
   text-align: center;
   padding: 2rem;
   color: #718096;
-  font-size: 1rem;
-  background-color: #f8fafc;
+  font-size: 0.95rem;
+  background-color: #F8FAFC;
   border-radius: 8px;
-  border: 1px dashed #e2e8f0;
+  border: 1px dashed #E2E8F0;
+}
+
+.task-due-date {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #718096;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.task-due-date::before {
+  content: '📅';
+  font-size: 0.9rem;
 }
 
 /* Responsive adjustments for filters */
@@ -1676,4 +1737,36 @@ input[type="file"]::-webkit-file-upload-button:hover {
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+.tasks-overview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.tasks-chart {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.tasks-chart h3 {
+  margin: 0 0 1.5rem 0;
+  color: #1F2937;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.chart-container {
+  height: 300px;
+  position: relative;
 } 

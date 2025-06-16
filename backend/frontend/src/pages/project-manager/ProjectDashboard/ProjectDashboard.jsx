@@ -8,6 +8,11 @@ import { getToken, getTenantId } from '../../../utils/storageUtils';
 import './ProjectDashboard.css';
 import AddMemberPopUp from './AddMemberPopUp/AddMemberPopUp';
 import UpdateProjectPopup from './UpdateProjectPopup/UpdateProjectPopup';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Pie } from 'react-chartjs-2';
+
+// Register ChartJS components
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 const ProjectDashboard = () => {
   const navigate = useNavigate();
@@ -46,6 +51,7 @@ const ProjectDashboard = () => {
   const [isTaskSelectionPopupOpen, setIsTaskSelectionPopupOpen] = useState(false);
   const [taskSearchQuery, setTaskSearchQuery] = useState('');
   const [taskStatusFilter, setTaskStatusFilter] = useState('all');
+  const [taskPriorityFilter, setTaskPriorityFilter] = useState('all');
   const [isAttachmentsPopupOpen, setIsAttachmentsPopupOpen] = useState(false);
   const [selectedTaskForAttachments, setSelectedTaskForAttachments] = useState(null);
   const [attachmentSearchQuery, setAttachmentSearchQuery] = useState('');
@@ -59,6 +65,7 @@ const ProjectDashboard = () => {
   const [isConfirmPopupOpen, setIsConfirmPopupOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(null);
   const [showUpdateProject, setShowUpdateProject] = useState(false);
+  const [selectedPriority, setSelectedPriority] = useState('ALL');
 
   useEffect(() => {
     fetchProjectDetails();
@@ -406,19 +413,29 @@ const ProjectDashboard = () => {
   };
 
   const getFilteredTasks = () => {
-    let filteredTasks = [...projectData.tasks];
+    let filteredTasks = projectData.tasks;
 
     // Apply search filter
     if (taskSearchQuery) {
-      filteredTasks = filteredTasks.filter(task =>
-        task.title.toLowerCase().includes(taskSearchQuery.toLowerCase())
+      const query = taskSearchQuery.toLowerCase();
+      filteredTasks = filteredTasks.filter(
+        task =>
+          task.title.toLowerCase().includes(query) ||
+          (task.description && task.description.toLowerCase().includes(query))
       );
     }
 
     // Apply status filter
     if (taskStatusFilter !== 'all') {
-      filteredTasks = filteredTasks.filter(task =>
-        task.status.toLowerCase() === taskStatusFilter.toLowerCase()
+      filteredTasks = filteredTasks.filter(
+        task => task.status.toLowerCase() === taskStatusFilter.toLowerCase()
+      );
+    }
+
+    // Apply priority filter
+    if (taskPriorityFilter !== 'all') {
+      filteredTasks = filteredTasks.filter(
+        task => task.priority.toLowerCase() === taskPriorityFilter.toLowerCase()
       );
     }
 
@@ -742,6 +759,84 @@ const ProjectDashboard = () => {
     setShowUpdateProject(false);
   };
 
+  const getTaskStatusDistribution = () => {
+    const statusCounts = {
+      TODO: 0,
+      In_Progress: 0,
+      Completed: 0
+    };
+
+    projectData.tasks
+      .filter(task => {
+        if (selectedPriority === 'ALL') return true;
+        // Normalize the priority case for comparison
+        const taskPriority = task.priority.toUpperCase();
+        const selectedPriorityUpper = selectedPriority.toUpperCase();
+        return taskPriority === selectedPriorityUpper;
+      })
+      .forEach(task => {
+        statusCounts[task.status] = (statusCounts[task.status] || 0) + 1;
+      });
+
+    return {
+      labels: ['To Do', 'In Progress', 'Completed'],
+      datasets: [
+        {
+          data: [statusCounts.TODO, statusCounts.In_Progress, statusCounts.Completed],
+          backgroundColor: [
+            '#F59E0B', // Orange for TODO
+            '#3B82F6', // Blue for In_Progress
+            '#10B981'  // Green for Completed
+          ],
+          borderColor: [
+            '#D97706',
+            '#2563EB',
+            '#059669'
+          ],
+          borderWidth: 1,
+        },
+      ],
+    };
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          padding: 20,
+          font: {
+            size: 12,
+            family: "'Inter', sans-serif"
+          }
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        padding: 12,
+        titleFont: {
+          size: 14,
+          family: "'Inter', sans-serif"
+        },
+        bodyFont: {
+          size: 13,
+          family: "'Inter', sans-serif"
+        },
+        callbacks: {
+          label: function(context) {
+            const label = context.label || '';
+            const value = context.raw || 0;
+            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+            const percentage = Math.round((value / total) * 100);
+            return `${label}: ${value} (${percentage}%)`;
+          }
+        }
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading-state">
@@ -837,23 +932,57 @@ const ProjectDashboard = () => {
               <FaEye /> Tasks
             </button>
           </div>
-          <div className="tasks-list">
-            {projectData.tasks.slice(0, 3).map((task) => (
-              <div key={task.id} className="task-card">
-                <div className="task-header">
-                  <h3>{task.title}</h3>
-                  <div className="task-meta">
-                    <span className={`priority-badge ${task.priority.toLowerCase()}`}>
-                      {task.priority}
-                    </span>
-                    <span className={`status-badge ${task.status.toLowerCase().replace('_', '-')}`}>
-                      {task.status.replace('_', ' ')}
-                    </span>
+          <div className="tasks-overview">
+            <div className="tasks-list">
+              {projectData.tasks.slice(0, 3).map((task) => (
+                <div key={task.id} className="task-card">
+                  <div className="task-header">
+                    <h3>{task.title}</h3>
+                    <div className="task-meta">
+                      <span className={`priority-badge ${task.priority.toLowerCase()}`}>
+                        {task.priority}
+                      </span>
+                      <span className={`status-badge ${task.status.toLowerCase().replace('_', '-')}`}>
+                        {task.status.replace('_', ' ')}
+                      </span>
+                    </div>
                   </div>
+                  <p className="task-description">{task.description || 'No description available'}</p>
                 </div>
-                <p className="task-description">{task.description || 'No description available'}</p>
+              ))}
+            </div>
+            <div className="tasks-chart">
+              <h3>Task Status Distribution</h3>
+              <div className="priority-filters">
+                <button 
+                  className={`priority-filter ${selectedPriority === 'ALL' ? 'active' : ''}`}
+                  onClick={() => setSelectedPriority('ALL')}
+                >
+                  All Tasks
+                </button>
+                <button 
+                  className={`priority-filter high ${selectedPriority === 'HIGH' ? 'active' : ''}`}
+                  onClick={() => setSelectedPriority('HIGH')}
+                >
+                  High Priority
+                </button>
+                <button 
+                  className={`priority-filter medium ${selectedPriority === 'MEDIUM' ? 'active' : ''}`}
+                  onClick={() => setSelectedPriority('MEDIUM')}
+                >
+                  Medium Priority
+                </button>
+                <button 
+                  className={`priority-filter low ${selectedPriority === 'LOW' ? 'active' : ''}`}
+                  onClick={() => setSelectedPriority('LOW')}
+                >
+                  Low Priority
+                </button>
               </div>
-            ))}
+              <div className="chart-container">
+                <Pie data={getTaskStatusDistribution()} options={chartOptions} />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -948,13 +1077,45 @@ const ProjectDashboard = () => {
           <div className="tasks-popup">
             <div className="popup-header">
               <h2>All Tasks</h2>
-              <button className="close-button" onClick={closeTasksPopup}>
-                <FaTimes />
-              </button>
+              <div className="popup-actions">
+                <div className="task-filters">
+                  <div className="search-container">
+                    <input
+                      type="text"
+                      placeholder="Search tasks..."
+                      value={taskSearchQuery}
+                      onChange={(e) => setTaskSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <select
+                    className="status-filter"
+                    value={taskStatusFilter}
+                    onChange={(e) => setTaskStatusFilter(e.target.value)}
+                  >
+                    <option value="all">All Status</option>
+                    <option value="TODO">To Do</option>
+                    <option value="IN_PROGRESS">In Progress</option>
+                    <option value="COMPLETED">Completed</option>
+                  </select>
+                  <select
+                    className="priority-filter"
+                    value={taskPriorityFilter}
+                    onChange={(e) => setTaskPriorityFilter(e.target.value)}
+                  >
+                    <option value="all">All Priorities</option>
+                    <option value="HIGH">High</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="LOW">Low</option>
+                  </select>
+                </div>
+                <button className="close-button" onClick={closeTasksPopup}>
+                  <FaTimes />
+                </button>
+              </div>
             </div>
             <div className="popup-content">
               <div className="tasks-grid">
-                {sortTasksByPriority(projectData.tasks).map((task) => (
+                {getFilteredTasks()?.map((task) => (
                   <div key={task.id} className="task-card">
                     <div className="task-header">
                       <h3>{task.title}</h3>
@@ -968,8 +1129,18 @@ const ProjectDashboard = () => {
                       </div>
                     </div>
                     <p className="task-description">{task.description || 'No description available'}</p>
+                    {task.dueDate && (
+                      <div className="task-due-date">
+                        Due: {new Date(task.dueDate).toLocaleDateString()}
+                      </div>
+                    )}
                   </div>
                 ))}
+                {getFilteredTasks()?.length === 0 && (
+                  <div className="no-results-message">
+                    <p>No tasks found matching your search criteria</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
