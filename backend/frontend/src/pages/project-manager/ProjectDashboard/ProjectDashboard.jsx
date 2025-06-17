@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaProjectDiagram, FaUsers, FaTasks, FaChartPie, FaPlus, FaUserPlus, FaClipboardList, FaUserCircle, FaPaperclip, FaFlag, FaEye, FaArrowLeft, FaTimes, FaToggleOn, FaToggleOff, FaUpload, FaSearch, FaFile, FaFileAlt, FaFileImage, FaFilePdf, FaFileWord, FaFileExcel, FaFileArchive, FaDownload, FaTrash, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
+import { FaProjectDiagram, FaUsers, FaTasks, FaChartPie, FaPlus, FaUserPlus, FaClipboardList, FaUserCircle, FaPaperclip, FaFlag, FaEye, FaArrowLeft, FaTimes, FaToggleOn, FaToggleOff, FaUpload, FaSearch, FaFile, FaFileAlt, FaFileImage, FaFilePdf, FaFileWord, FaFileExcel, FaFileArchive, FaDownload, FaTrash, FaCheckCircle, FaExclamationCircle, FaPlusCircle } from 'react-icons/fa';
 import axios from 'axios';
-import { PROJECT_ENDPOINTS, AUTH_ENDPOINTS, USER_PROJECT_ASSIGNMENT} from '../../../config/apiEndpoints';
+import { PROJECT_ENDPOINTS, AUTH_ENDPOINTS, USER_PROJECT_ASSIGNMENT, TASK_ENDPOINTS } from '../../../config/apiEndpoints';
 import { useAuth } from '../../../hooks/useAuth';
-import { getToken, getTenantId } from '../../../utils/storageUtils';
+import { getToken, getTenantId, getUserData } from '../../../utils/storageUtils';
 import './ProjectDashboard.css';
 import AddMemberPopUp from './AddMemberPopUp/AddMemberPopUp';
 import UpdateProjectPopup from './UpdateProjectPopup/UpdateProjectPopup';
@@ -66,6 +66,18 @@ const ProjectDashboard = () => {
   const [selectedStatus, setSelectedStatus] = useState(null);
   const [showUpdateProject, setShowUpdateProject] = useState(false);
   const [selectedPriority, setSelectedPriority] = useState('ALL');
+  const [showNewTask, setShowNewTask] = useState(false);
+  const [newTaskForm, setNewTaskForm] = useState({
+    projectId: '',
+    title: '',
+    description: '',
+    status: 'TODO',
+    priority: 'LOW',
+    assignedTo: '2',
+    createdBy: '',
+    estimatedTime: '10',
+    dueDate: ''
+  });
 
   useEffect(() => {
     fetchProjectDetails();
@@ -129,10 +141,6 @@ const ProjectDashboard = () => {
     }
   };
 
-  const handleStatusClick = () => {
-    setIsStatusPopupOpen(true);
-  };
-
   const handleStatusSelect = (newStatus) => {
     setSelectedStatus(newStatus);
     setIsStatusPopupOpen(false);
@@ -171,8 +179,6 @@ const ProjectDashboard = () => {
     } catch (err) {
       console.error('Error updating project status:', err);
       setError('Failed to update project status. Please try again.');
-
-
     }
   };
 
@@ -328,9 +334,9 @@ const ProjectDashboard = () => {
         setSuccess('Milestone added successfuly');
 
         // Auto-dismiss success message after 2 seconds
-              setTimeout(() => {
-                setSuccess(null);
-              }, 1200);
+        setTimeout(() => {
+          setSuccess(null);
+        }, 1200);
       }
     } catch (err) {
       console.error('Error creating milestone:', err);
@@ -394,10 +400,10 @@ const ProjectDashboard = () => {
 
         setSuccess('Attchment added successfuly');
 
-                // Auto-dismiss success message after 2 seconds
-                      setTimeout(() => {
-                        setSuccess(null);
-                      }, 1200);
+        // Auto-dismiss success message after 2 seconds
+        setTimeout(() => {
+          setSuccess(null);
+        }, 1200);
       }
     } catch (err) {
       console.error('Error uploading attachment:', err);
@@ -506,10 +512,10 @@ const ProjectDashboard = () => {
 
       setSuccess('Attachment downloaded successfuly');
 
-        // Auto-dismiss success message after 2 seconds
-              setTimeout(() => {
-                setSuccess(null);
-              }, 1200);
+      // Auto-dismiss success message after 2 seconds
+      setTimeout(() => {
+        setSuccess(null);
+      }, 1200);
     } catch (error) {
       console.error('Error downloading attachment:', error);
       if (error.response) {
@@ -633,10 +639,10 @@ const ProjectDashboard = () => {
 
       setSuccess('Members added successfuly');
 
-        // Auto-dismiss success message after 2 seconds
-              setTimeout(() => {
-                setSuccess(null);
-              }, 1200);
+      // Auto-dismiss success message after 2 seconds
+      setTimeout(() => {
+        setSuccess(null);
+      }, 1200);
 
       // Close the popup after successful addition
       setIsAddMemberPopupOpen(false);
@@ -701,10 +707,10 @@ const ProjectDashboard = () => {
 
       setSuccess('Member removed successfuly');
 
-        // Auto-dismiss success message after 2 seconds
-              setTimeout(() => {
-                setSuccess(null);
-              }, 1200);
+      // Auto-dismiss success message after 2 seconds
+      setTimeout(() => {
+        setSuccess(null);
+      }, 1200);
 
       // Update the local state to remove the member
       setProjectData(prev => ({
@@ -714,7 +720,6 @@ const ProjectDashboard = () => {
         )
       }));
 
-      //setSuccess('Team member removed successfully');
     } catch (error) {
       console.error('Error removing team member:', error);
       setError(error.response?.data?.message || 'Failed to remove team member');
@@ -837,6 +842,96 @@ const ProjectDashboard = () => {
     }
   };
 
+  const handleNewTaskClick = () => {
+    setShowNewTask(true);
+  };
+
+  const handleCloseNewTask = () => {
+    setShowNewTask(false);
+  };
+
+  const handleNewTaskFormChange = (e) => {
+    const { name, value } = e.target;
+    setNewTaskForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleNewTaskSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const token = getToken();
+      const tenantId = getTenantId();
+      const userData = getUserData();
+
+      if (!token || !tenantId) {
+        setError('Authentication information missing. Please login again.');
+        return;
+      }
+
+      if (!userData || !userData.id) {
+        setError('User information not found. Please login again.');
+        return;
+      }
+
+      // Set the project ID and created by from the current context
+      const taskData = {
+        ...newTaskForm,
+        projectId: projectData.id,
+        createdBy: userData.id,
+        assignedTo: '2',
+        estimatedTime: '10'
+      };
+
+      const response = await axios.post(TASK_ENDPOINTS.CREATE_TASK, taskData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'X-TenantID': tenantId
+        }
+      });
+
+      if (response.status === 200 || response.status === 201) {
+        // Refresh project data to show new task
+        await fetchProjectDetails();
+        setShowNewTask(false);
+        setNewTaskForm({
+          projectId: '',
+          title: '',
+          description: '',
+          status: 'TODO',
+          priority: 'LOW',
+          assignedTo: '2',
+          createdBy: '',
+          estimatedTime: '10',
+          dueDate: ''
+        });
+
+        setSuccess('Task created successfully');
+
+        // Auto-dismiss success message after 2 seconds
+        setTimeout(() => {
+          setSuccess(null);
+        }, 1200);
+      }
+    } catch (err) {
+      console.error('Error creating task:', err);
+      if (err.response?.status === 401) {
+        setError('Session expired. Please login again.');
+        navigate('/signin');
+      } else if (err.response?.status === 403) {
+        setError('You do not have permission to create tasks for this project.');
+      } else {
+        setError('Failed to create task. Please try again.');
+      }
+    }
+  };
+
+  const handleTaskClick = (taskId) => {
+    navigate(`/project-manager/task/${taskId}`);
+  };
+
   if (loading) {
     return (
       <div className="loading-state">
@@ -864,7 +959,6 @@ const ProjectDashboard = () => {
           <div className="project-meta">
             <div
               className="status-badge"
-              onClick={handleStatusClick}
               style={{
                 backgroundColor: getStatusColor(projectData.status),
                 color: 'white',
@@ -928,14 +1022,24 @@ const ProjectDashboard = () => {
         <div className="tasks-section">
           <div className="section-header">
             <h2>Tasks</h2>
-            <button className="view-button" onClick={handleTasksClick}>
-              <FaEye /> Tasks
-            </button>
+            <div className="task-actions">
+              <button className="new-task-button" onClick={handleNewTaskClick}>
+                <FaPlusCircle /> New Task
+              </button>
+              <button className="view-button" onClick={handleTasksClick}>
+                <FaEye /> Tasks
+              </button>
+            </div>
           </div>
           <div className="tasks-overview">
             <div className="tasks-list">
               {projectData.tasks.slice(0, 3).map((task) => (
-                <div key={task.id} className="task-card">
+                <div 
+                  key={task.id} 
+                  className="task-card"
+                  onClick={() => handleTaskClick(task.id)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <div className="task-header">
                     <h3>{task.title}</h3>
                     <div className="task-meta">
@@ -1116,7 +1220,12 @@ const ProjectDashboard = () => {
             <div className="popup-content">
               <div className="tasks-grid">
                 {getFilteredTasks()?.map((task) => (
-                  <div key={task.id} className="task-card">
+                  <div 
+                    key={task.id} 
+                    className="task-card"
+                    onClick={() => handleTaskClick(task.id)}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <div className="task-header">
                       <h3>{task.title}</h3>
                       <div className="task-meta">
@@ -1693,6 +1802,96 @@ const ProjectDashboard = () => {
           projectData={projectData}
           onProjectUpdate={handleProjectUpdate}
         />
+      )}
+
+      {showNewTask && (
+        <div className="popup-overlay">
+          <div className="form-popup">
+            <div className="popup-header">
+              <h2>Create New Task</h2>
+              <button className="close-button" onClick={handleCloseNewTask}>
+                <FaTimes />
+              </button>
+            </div>
+            <form onSubmit={handleNewTaskSubmit} className="task-form">
+              <div className="form-group">
+                <label htmlFor="title">Title</label>
+                <input
+                  type="text"
+                  id="title"
+                  name="title"
+                  value={newTaskForm.title}
+                  onChange={handleNewTaskFormChange}
+                  required
+                  placeholder="Enter task title"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="description">Description</label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={newTaskForm.description}
+                  onChange={handleNewTaskFormChange}
+                  placeholder="Enter task description"
+                  rows="4"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="status">Status</label>
+                <select
+                  id="status"
+                  name="status"
+                  value={newTaskForm.status}
+                  onChange={handleNewTaskFormChange}
+                  required
+                >
+                  <option value="TODO">To Do</option>
+                  <option value="In_Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="priority">Priority</label>
+                <select
+                  id="priority"
+                  name="priority"
+                  value={newTaskForm.priority}
+                  onChange={handleNewTaskFormChange}
+                  required
+                >
+                  <option value="LOW">Low</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="High">High</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="dueDate">Due Date</label>
+                <input
+                  type="date"
+                  id="dueDate"
+                  name="dueDate"
+                  value={newTaskForm.dueDate}
+                  onChange={handleNewTaskFormChange}
+                  required
+                />
+              </div>
+
+              <div className="form-actions">
+                <button type="button" className="cancel-button" onClick={handleCloseNewTask}>
+                  Cancel
+                </button>
+                <button type="submit" className="submit-button">
+                  Create Task
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

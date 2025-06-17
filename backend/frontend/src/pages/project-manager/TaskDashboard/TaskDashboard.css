@@ -1,0 +1,801 @@
+/* General Layout & Background */
+.task-dashboard {
+  padding: 30px;
+  max-width: 1400px;
+  /* Slightly adjusted for better fit, can be 1600px */
+  margin: 0 auto;
+  background-color: #f8fafc;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+  /* A common modern sans-serif font */
+}
+
+/* Breadcrumb Navigation */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  margin-bottom: 25px;
+  color: #64748b;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.breadcrumb .back-arrow {
+  margin-right: 15px;
+  color: #475569;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.breadcrumb span {
+  cursor: pointer;
+  transition: color 0.2s ease-in-out;
+}
+
+.breadcrumb span:hover {
+  color: #2563eb;
+}
+
+.breadcrumb .current {
+  color: #1e293b;
+  font-weight: 600;
+  cursor: default;
+}
+
+.breadcrumb-separator {
+  margin: 0 10px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* Header Section */
+.task-header-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 30px;
+  background-color: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin-bottom: 30px;
+  gap: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.task-header-main::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to bottom, #2563eb, #3b82f6);
+}
+
+.task-header-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.task-title-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.task-id-badge {
+  background-color: #f1f5f9;
+  color: #64748b;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.task-detail-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.3;
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.task-meta-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+}
+
+.meta-info-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-label,
+.priority-label {
+  padding: 6px 14px;
+  border-radius: 8px;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.status-dot,
+.priority-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.due-date-info,
+.estimated-time-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 6px 12px;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.due-date-info:hover,
+.estimated-time-info:hover {
+  background-color: #f1f5f9;
+}
+
+.due-date-info svg,
+.estimated-time-info svg {
+  font-size: 16px;
+  color: #64748b;
+}
+
+.header-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.action-button-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: white;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-button-header:hover {
+  background-color: #f8fafc;
+  border-color: #3b82f6;
+  color: #3b82f6;
+  transform: translateY(-1px);
+}
+
+.action-button-header.edit-button {
+  color: #475569;
+}
+
+.action-button-header.edit-button:hover {
+  color: #3b82f6;
+}
+
+.action-button-header.delete-button {
+  padding: 10px;
+  color: #ef4444;
+  border-color: #fee2e2;
+}
+
+.action-button-header.delete-button:hover {
+  background-color: #fee2e2;
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.status-change-dropdown {
+  position: relative;
+  z-index: 20;
+  /* Ensure dropdown is above other content */
+}
+
+.dropdown-menu-status {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  min-width: 160px;
+  overflow: hidden;
+  /* For rounded corners on first/last item */
+}
+
+.dropdown-menu-status button {
+  display: block;
+  width: 100%;
+  padding: 10px 15px;
+  text-align: left;
+  border: none;
+  background: none;
+  color: #475569;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+.dropdown-menu-status button:hover {
+  background-color: #f1f5f9;
+  color: #2563eb;
+}
+
+/* Main Content Area Grid */
+.task-content-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 30px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* Common Card Styles */
+.task-card {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding: 25px 30px;
+}
+
+.card-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 20px;
+}
+
+/* Description Card */
+.description-card {
+  margin-bottom: 30px;
+}
+
+.task-description-text {
+  color: #475569;
+  line-height: 1.7;
+  font-size: 15px;
+  margin-bottom: 30px;
+  /* Space before user/date info */
+}
+
+.user-date-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.info-label {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 8px;
+  display: block;
+  /* Ensures label takes its own line */
+  font-weight: 500;
+}
+
+.user-details {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #1e293b;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.user-details .user-icon {
+  font-size: 20px;
+  color: #94a3b8;
+}
+
+.date-time {
+  color: #1e293b;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+
+/* Checklist Card */
+.checklist-card {
+  margin-bottom: 30px;
+}
+
+.checklist-progress-bar-container {
+  background-color: #e2e8f0;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.progress-text-display {
+  position: absolute;
+  right: 0;
+  top: -25px;
+  /* Position above the bar */
+  font-size: 13px;
+  color: #475569;
+  font-weight: 500;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background-color: #2563eb;
+  border-radius: 4px;
+  transition: width 0.3s ease-in-out;
+}
+
+.checklist-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 25px;
+  /* max-height: 300px; /* Add if list can get very long */
+  /* overflow-y: auto; */
+}
+
+.checklist-item-entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #f8fafc;
+  padding: 12px 15px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.checklist-item-entry input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 2px solid #cbd5e1;
+  cursor: pointer;
+  appearance: none;
+  /* Hide default checkbox */
+  -webkit-appearance: none;
+  display: grid;
+  place-content: center;
+  background-color: #fff;
+  flex-shrink: 0;
+  /* Prevent checkbox from shrinking */
+}
+
+.checklist-item-entry input[type="checkbox"]::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  transform: scale(0);
+  transition: transform 0.15s ease-in-out;
+  box-shadow: inset 1em 1em #2563eb;
+  /* Fill with primary color */
+  border-radius: 2px;
+}
+
+.checklist-item-entry input[type="checkbox"]:checked::before {
+  transform: scale(1);
+}
+
+.checklist-item-entry input[type="checkbox"]:checked {
+  border-color: #2563eb;
+}
+
+.checklist-item-entry span {
+  flex-grow: 1;
+  /* Text takes available space */
+}
+
+.checklist-item-entry span.completed-item {
+  text-decoration: line-through;
+  color: #94a3b8;
+}
+
+.remove-checklist-item {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 5px;
+  transition: color 0.2s ease-in-out;
+}
+
+.remove-checklist-item:hover {
+  color: #ef4444;
+}
+
+.add-new-checklist-item {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  /* Space from last item if not full */
+}
+
+.add-new-checklist-item input {
+  flex-grow: 1;
+  padding: 12px 15px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #475569;
+}
+
+.add-new-checklist-item input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.add-checklist-button {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 15px;
+  /* Adjusted padding */
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.add-checklist-button:hover {
+  background-color: #1d4ed8;
+}
+
+
+/* Comments Card */
+.comments-card {
+  margin-bottom: 30px;
+}
+
+.comments-section {
+  flex: 1;
+  /* Takes available space */
+  margin-bottom: 30px;
+  /* Space between comments and attachments */
+}
+
+.comments-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-height: 250px;
+  /* Example height, adjust as needed */
+  overflow-y: auto;
+  padding-right: 5px;
+  /* For scrollbar spacing */
+  margin-bottom: 20px;
+}
+
+/* Scrollbar styling for comments-list-container */
+.comments-list-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.comments-list-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.comments-list-container::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.comments-list-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+
+.comment-item {
+  background-color: #f8fafc;
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+.comment-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.comment-user-details {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.comment-user-details .user-icon {
+  font-size: 20px;
+  color: #94a3b8;
+}
+
+.comment-timestamp {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.comment-content-text {
+  color: #475569;
+  line-height: 1.6;
+  font-size: 15px;
+  margin: 0;
+}
+
+.new-comment-input-area {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.new-comment-input-area textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 12px 15px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #475569;
+  resize: vertical;
+}
+
+.new-comment-input-area textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.add-comment-button {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 25px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  align-self: flex-end;
+  /* Align to the right */
+  transition: background-color 0.2s ease-in-out;
+}
+
+.add-comment-button:hover {
+  background-color: #1d4ed8;
+}
+
+
+/* Attachments Card */
+.attachments-card {
+  margin-bottom: 30px;
+}
+
+.attachments-section {
+  /* No specific styles beyond .task-card */
+}
+
+.upload-zone {
+  border: 2px dashed #e2e8f0;
+  border-radius: 8px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #64748b;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s ease-in-out, background-color 0.2s ease-in-out;
+  margin-bottom: 20px;
+}
+
+.upload-zone:hover {
+  border-color: #3b82f6;
+  background-color: #f1f5f9;
+}
+
+.upload-zone .upload-icon-main {
+  font-size: 40px;
+  /* Larger icon */
+  color: #94a3b8;
+}
+
+.attachments-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.attachment-item-entry {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background-color: #f8fafc;
+  padding: 12px 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+.file-icon-wrapper {
+  font-size: 24px;
+  /* Larger file icons */
+  color: #475569;
+  flex-shrink: 0;
+}
+
+.attachment-details {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.attachment-file-name {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 15px;
+}
+
+.attachment-meta-info {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.download-attachment-button {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 18px;
+  /* Larger download icon */
+  cursor: pointer;
+  padding: 5px;
+  transition: color 0.2s ease-in-out;
+}
+
+.download-attachment-button:hover {
+  color: #3b82f6;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1200px) {
+  .task-content-grid {
+    grid-template-columns: 1fr;
+    max-width: 800px;
+  }
+
+  .comments-attachments-card {
+    grid-column: span 2;
+    /* Spans both columns */
+  }
+
+  .task-header-main {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px 25px;
+  }
+
+  .task-meta-info {
+    margin-left: 0;
+    /* Reset margin */
+    margin-top: 15px;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .header-actions-right {
+    margin-left: 0;
+    margin-top: 15px;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .task-title-section {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .task-id-badge {
+    margin-left: 0;
+    margin-top: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .task-dashboard {
+    padding: 15px;
+  }
+
+  .task-content-grid {
+    gap: 20px;
+  }
+
+  .task-card {
+    padding: 20px;
+  }
+
+  .task-detail-title {
+    font-size: 24px;
+  }
+
+  .task-meta-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .meta-info-group {
+    flex-wrap: wrap;
+  }
+
+  .header-actions-right {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .action-button-header {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  .action-button-header.change-status-button {
+    min-width: unset;
+  }
+
+  .add-new-checklist-item {
+    flex-direction: column;
+  }
+
+  .add-checklist-button {
+    margin-top: 10px;
+  }
+
+  .new-comment-input-area {
+    flex-direction: column;
+  }
+
+  .add-comment-button {
+    margin-top: 10px;
+  }
+} 

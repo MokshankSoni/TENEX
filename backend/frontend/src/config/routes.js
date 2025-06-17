@@ -22,6 +22,7 @@ import TeamMemberDashboard from '../pages/team-member/Dashboard/Dashboard';
 // Project Manager routes
 import ProjectManagerDashboard from '../pages/project-manager/Dashboard/Dashboard';
 import ProjectManagerProjectDashboard from '../pages/project-manager/ProjectDashboard/ProjectDashboard';
+import TaskDashboard from '../pages/project-manager/TaskDashboard/TaskDashboard';
 
 // Tenant Admin routes
 import TenantAdminDashboard from '../pages/tenant-admin/Dashboard/Dashboard';
@@ -75,6 +76,11 @@ export const routes = [
     path: '/project-manager/project/:projectId',
     element: ProjectManagerProjectDashboard,
     title: 'Project Dashboard'
+  },
+  {
+    path: '/project-manager/task/:taskId',
+    element: TaskDashboard,
+    title: 'Task Dashboard'
   },
   {
     path: '/tenant-admin/dashboard',
