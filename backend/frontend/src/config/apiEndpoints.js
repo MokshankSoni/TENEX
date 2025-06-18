@@ -111,3 +111,10 @@ export const USER_PROJECT_ASSIGNMENT = {
     REMOVE_MEMBER: (username, projectId) => `${BASE_URL}/assignments/${username}/${projectId}`,
     MY_ASSIGNMENTS: `${BASE_URL}/assignments/my-assignments`
 };
+
+// Task CheckList Endpoints
+export const TASK_CHECKLIST = {
+    ADD_TASK_CHECKLIST: `${BASE_URL}/task-checklists`,
+    REMOVE_TASK_CHECKLIST: (id) => `${BASE_URL}/task-checklists/${id}`,
+    TOGGLE_STATUS_CHECKLIST: (id) => `${BASE_URL}/task-checklists/${id}/togglestatus`
+};

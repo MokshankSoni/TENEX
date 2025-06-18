@@ -1,0 +1,132 @@
+/* Overlay for the popup */
+.comment-popup-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s;
+}
+
+/* Modal container */
+.comment-popup-modal {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  width: 95vw;
+  max-width: 540px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.2s;
+}
+
+/* Header */
+.comment-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.1rem 1.5rem 1.1rem 1.5rem;
+  border-bottom: 1px solid #f0f4f8;
+}
+.comment-popup-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #1a365d;
+  font-weight: 600;
+}
+.comment-popup-close {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.3rem;
+  cursor: pointer;
+  transition: color 0.18s;
+  padding: 0.2rem 0.4rem;
+}
+.comment-popup-close:hover {
+  color: #1976d2;
+}
+
+/* Scrollable list */
+.comment-popup-list {
+  padding: 1.2rem 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 120px;
+  max-height: 60vh;
+}
+
+.comment-popup-empty {
+  color: #888;
+  text-align: center;
+  padding: 2.5rem 0;
+  font-size: 1.05rem;
+}
+
+/* Comment item */
+.comment-popup-item {
+  background: #f8fafc;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+  padding: 1rem 1.1rem;
+  margin-bottom: 1.1rem;
+  border: 1px solid #f0f4f8;
+  transition: box-shadow 0.2s;
+}
+.comment-popup-item:last-child {
+  margin-bottom: 0;
+}
+.comment-popup-item:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+.comment-popup-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+.comment-popup-user-details {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  color: #2d3a4a;
+}
+.comment-popup-user-icon {
+  color: #4a90e2;
+  font-size: 1.2rem;
+}
+.comment-popup-user-role {
+  background: #e3f2fd;
+  color: #1976d2;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 8px;
+  margin-left: 0.5rem;
+  letter-spacing: 0.5px;
+}
+.comment-popup-timestamp {
+  color: #8a99b3;
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+.comment-popup-content {
+  color: #374151;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0.2rem 0 0 0;
+  word-break: break-word;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideIn {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+} 

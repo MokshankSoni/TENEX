@@ -6,11 +6,14 @@ import {
     FaEllipsisV, FaUserCircle, FaClock, FaCalendarAlt,
     FaCheckCircle, FaTimes, FaPlus, FaFile, FaFileImage,
     FaFilePdf, FaFileWord, FaFileExcel, FaFileArchive,
-    FaDownload, FaChevronRight
+    FaDownload, FaChevronRight, FaEye
 } from 'react-icons/fa';
 import './TaskDashboard.css';
-import { TASK_ENDPOINTS } from '../../../config/apiEndpoints';
+import { TASK_ENDPOINTS, AUTH_ENDPOINTS, TASK_CHECKLIST } from '../../../config/apiEndpoints';
 import { getToken, getTenantId } from '../../../utils/storageUtils';
+import CommentPopUp from './CommentPopUp/CommentPopUp';
+import AttachmentPopUp from './AttachmentPopUp/AttachmentPopUp';
+import ConfirmDialog from '../../../components/common/ConfirmDialog/ConfirmDialog';
 
 const TaskDashboard = () => {
     const navigate = useNavigate();
@@ -21,6 +24,10 @@ const TaskDashboard = () => {
     const [taskDetails, setTaskDetails] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [users, setUsers] = useState([]);
+    const [showCommentPopUp, setShowCommentPopUp] = useState(false);
+    const [showAttachmentPopUp, setShowAttachmentPopUp] = useState(false);
+    const [confirmDialog, setConfirmDialog] = useState({ open: false, message: '', onConfirm: null });
 
     useEffect(() => {
         const fetchTaskDetails = async () => {
@@ -46,7 +53,6 @@ const TaskDashboard = () => {
                         'X-TenantID': tenantId
                     }
                 });
-                console.log(response.data);
                 setTaskDetails(response.data);
                 
             } catch (err) {
@@ -64,6 +70,37 @@ const TaskDashboard = () => {
         };
         if (taskId) fetchTaskDetails();
     }, [taskId, navigate]);
+
+    useEffect(() => {
+        const fetchAllUsers = async () => {
+            const token = getToken();
+            const tenantId = getTenantId();
+            if (!token) {
+                console.error('Authentication token not found');
+                return;
+            }
+            if (!tenantId) {
+                console.error('Tenant ID not found');
+                return;
+            }
+            try {
+                const response = await axios.get(AUTH_ENDPOINTS.GET_ALL_USERS, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'X-TenantID': tenantId
+                    }
+                });
+                setUsers(response.data);
+            } catch (err) {
+                console.error('Error fetching all users:', err);
+                if (err.response) {
+                    console.error('Response:', err.response.data);
+                }
+            }
+        };
+        fetchAllUsers();
+    }, []);
 
     // Helper functions for status and priority colors (case-sensitive)
     const getStatusColor = (status) => {
@@ -91,6 +128,43 @@ const TaskDashboard = () => {
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
+    // Helper to trim microseconds from ISO string (for Safari/JS compatibility)
+    const trimMicroseconds = (isoString) => {
+        if (!isoString) return '';
+        // Remove microseconds if present (e.g., 2025-05-22T14:46:08.754135 -> 2025-05-22T14:46:08.754)
+        return isoString.replace(/(\.\d{3})\d*(Z)?$/, '$1$2');
+    };
+
+    const formatCommentTime = (isoString) => {
+        if (!isoString) return '';
+        const date = new Date(trimMicroseconds(isoString));
+        if (isNaN(date.getTime())) return '';
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' +
+            date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    };
+
+    // Helper to get user info (username and roles) from userId
+    const getUserInfo = (userId) => {
+        const user = users.find(u => u.id === userId);
+        if (!user) return { username: 'Unknown User', roles: [] };
+        return { username: user.username, roles: user.roles };
+    };
+
+    // Helper to format a role string
+    const formatRole = (roles) => {
+        if (!roles || roles.length === 0) return '';
+        // Use the first role for display
+        const role = roles[0];
+        const roleName = role.replace('ROLE_', '').toLowerCase();
+        switch (roleName) {
+            case 'tenant_admin': return 'Tenant Admin';
+            case 'project_manager': return 'Project Manager';
+            case 'team_member': return 'Team Member';
+            case 'client': return 'Client';
+            default: return roleName.charAt(0).toUpperCase() + roleName.slice(1);
+        }
+    };
+
     // Render loading or error states
     if (loading) {
         return <div className="loading-state">Loading task details...</div>;
@@ -112,12 +186,6 @@ const TaskDashboard = () => {
         return <FaFile />;
     };
 
-    const formatCommentTime = (isoString) => {
-        const date = new Date(isoString);
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' +
-               date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-    };
-
     const calculateChecklistProgress = () => {
         const checklist = taskDetails.checklists || [];
         if (checklist.length === 0) return 0;
@@ -129,6 +197,120 @@ const TaskDashboard = () => {
         console.log(`Changing status to: ${newStatus}`);
         // In a real app, you'd send an API request here
         setShowStatusDropdown(false);
+    };
+
+    const handleAddChecklistItem = async () => {
+        if (!newChecklistItem.trim()) return;
+        setConfirmDialog({
+            open: true,
+            message: 'Are you sure you want to add this checklist item?',
+            onConfirm: async () => {
+                const token = getToken();
+                const tenantId = getTenantId();
+                if (!token || !tenantId) return setConfirmDialog({ open: false });
+                try {
+                    await axios.post(TASK_CHECKLIST.ADD_TASK_CHECKLIST, {
+                        taskId: taskDetails.id,
+                        item: newChecklistItem.trim(),
+                        completed: false
+                    }, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                            'X-TenantID': tenantId
+                        }
+                    });
+                    setNewChecklistItem('');
+                    // Refresh task details
+                    if (taskId) {
+                        const response = await axios.get(TASK_ENDPOINTS.GET_TASK(taskId), {
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json',
+                                'X-TenantID': tenantId
+                            }
+                        });
+                        setTaskDetails(response.data);
+                    }
+                } catch (err) {
+                    console.error('Error adding checklist item:', err);
+                } finally {
+                    setConfirmDialog({ open: false });
+                }
+            }
+        });
+    };
+
+    const handleRemoveChecklistItem = (id) => {
+        setConfirmDialog({
+            open: true,
+            message: 'Are you sure you want to delete this checklist item?',
+            onConfirm: async () => {
+                const token = getToken();
+                const tenantId = getTenantId();
+                if (!token || !tenantId) return setConfirmDialog({ open: false });
+                try {
+                    await axios.delete(TASK_CHECKLIST.REMOVE_TASK_CHECKLIST(id), {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                            'X-TenantID': tenantId
+                        }
+                    });
+                    // Refresh task details
+                    if (taskId) {
+                        const response = await axios.get(TASK_ENDPOINTS.GET_TASK(taskId), {
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json',
+                                'X-TenantID': tenantId
+                            }
+                        });
+                        setTaskDetails(response.data);
+                    }
+                } catch (err) {
+                    console.error('Error removing checklist item:', err);
+                } finally {
+                    setConfirmDialog({ open: false });
+                }
+            }
+        });
+    };
+
+    const handleToggleChecklistStatus = (id) => {
+        setConfirmDialog({
+            open: true,
+            message: 'Are you sure you want to change the status of this checklist item?',
+            onConfirm: async () => {
+                const token = getToken();
+                const tenantId = getTenantId();
+                if (!token || !tenantId) return setConfirmDialog({ open: false });
+                try {
+                    await axios.patch(TASK_CHECKLIST.TOGGLE_STATUS_CHECKLIST(id), {}, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                            'X-TenantID': tenantId
+                        }
+                    });
+                    // Refresh task details
+                    if (taskId) {
+                        const response = await axios.get(TASK_ENDPOINTS.GET_TASK(taskId), {
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json',
+                                'X-TenantID': tenantId
+                            }
+                        });
+                        setTaskDetails(response.data);
+                    }
+                } catch (err) {
+                    console.error('Error toggling checklist status:', err);
+                } finally {
+                    setConfirmDialog({ open: false });
+                }
+            }
+        });
     };
 
   return (
@@ -204,9 +386,9 @@ const TaskDashboard = () => {
                     <div className="checklist-items-list">
                         {(taskDetails.checklists || []).map(item => (
                             <div key={item.id} className="checklist-item-entry">
-                                <input type="checkbox" checked={item.completed} onChange={() => {}} />
+                                <input type="checkbox" checked={item.completed} onChange={() => handleToggleChecklistStatus(item.id)} />
                                 <span className={item.completed ? 'completed-item' : ''}>{item.item}</span>
-                                <button className="remove-checklist-item"><FaTimes /></button>
+                                <button className="remove-checklist-item" onClick={() => handleRemoveChecklistItem(item.id)}><FaTimes /></button>
                             </div>
                         ))}
                     </div>
@@ -217,23 +399,39 @@ const TaskDashboard = () => {
                             value={newChecklistItem}
                             onChange={(e) => setNewChecklistItem(e.target.value)}
                         />
-                        <button className="add-checklist-button"><FaPlus /></button>
+                        <button className="add-checklist-button" onClick={handleAddChecklistItem}><FaPlus /></button>
                     </div>
                 </div>
 
                 {/* Comments Card */}
                 <div className="task-card comments-card">
-                    <h2 className="card-title">Comments</h2>
+                    <div className="section-header-row">
+                        <h2 className="card-title">Comments</h2>
+                        <button className="view-all-section-btn" onClick={() => setShowCommentPopUp(true)}>
+                            <FaEye style={{ marginRight: 6 }} /> View All
+                        </button>
+                    </div>
                     <div className="comments-list-container">
-                        {taskDetails.comments.map(comment => (
-                            <div key={comment.id} className="comment-item">
-                                <div className="comment-header-row">
-                                    <div className="user-details comment-user-details"><FaUserCircle className="user-icon" /><span>{comment.user}</span></div>
-                                    <span className="comment-timestamp">{formatCommentTime(comment.timestamp)}</span>
+                        {(() => {
+                            const latest = (taskDetails.comments || []).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+                            if (!latest) return <div className="comment-item comment-empty">No comments yet.</div>;
+                            const userInfo = getUserInfo(latest.userId);
+                            return (
+                                <div key={latest.id} className="comment-item">
+                                    <div className="comment-header-row">
+                                        <div className="user-details comment-user-details">
+                                            <FaUserCircle className="user-icon" />
+                                            <span>{userInfo.username}</span>
+                                            {userInfo.roles.length > 0 && (
+                                                <span className="user-role-badge">{formatRole(userInfo.roles)}</span>
+                                            )}
+                                        </div>
+                                        <span className="comment-timestamp">{formatCommentTime(latest.createdAt)}</span>
+                                    </div>
+                                    <p className="comment-content-text">{latest.content}</p>
                                 </div>
-                                <p className="comment-content-text">{comment.content}</p>
-                            </div>
-                        ))}
+                            );
+                        })()}
                     </div>
                     <div className="new-comment-input-area">
                         <textarea
@@ -243,17 +441,30 @@ const TaskDashboard = () => {
                         />
                         <button className="add-comment-button">Add Comment</button>
                     </div>
+                    <CommentPopUp
+                        isOpen={showCommentPopUp}
+                        comments={taskDetails.comments}
+                        getUserInfo={getUserInfo}
+                        formatRole={formatRole}
+                        formatCommentTime={formatCommentTime}
+                        onClose={() => setShowCommentPopUp(false)}
+                    />
                 </div>
 
                 {/* Attachments Card */}
                 <div className="task-card attachments-card">
-                    <h2 className="card-title">Attachments</h2>
+                    <div className="section-header-row">
+                        <h2 className="card-title">Attachments</h2>
+                        <button className="view-all-section-btn" onClick={() => setShowAttachmentPopUp(true)}>
+                            <FaEye style={{ marginRight: 6 }} /> View All
+                        </button>
+                    </div>
                     <div className="upload-zone">
                         <FaPaperclip className="upload-icon-main" />
                         <span>Drag files here or click to upload</span>
                     </div>
                     <div className="attachments-list-container">
-                        {(taskDetails.attachments || []).map(attachment => (
+                        {(taskDetails.attachments || []).slice(0, 3).map(attachment => (
                             <div key={attachment.id} className="attachment-item-entry">
                                 <div className="file-icon-wrapper">{getFileIcon(attachment.fileType)}</div>
                                 <div className="attachment-details">
@@ -266,6 +477,14 @@ const TaskDashboard = () => {
                             </div>
                         ))}
                     </div>
+                    <AttachmentPopUp
+                        isOpen={showAttachmentPopUp}
+                        attachments={taskDetails.attachments}
+                        getFileIcon={getFileIcon}
+                        getUserInfo={getUserInfo}
+                        formatCommentTime={formatCommentTime}
+                        onClose={() => setShowAttachmentPopUp(false)}
+                    />
                 </div>
             </div>
 
@@ -282,6 +501,12 @@ const TaskDashboard = () => {
                     </div>
                 </div>
             )} */}
+            <ConfirmDialog
+                isOpen={confirmDialog.open}
+                message={confirmDialog.message}
+                onConfirm={async () => { if (confirmDialog.onConfirm) await confirmDialog.onConfirm(); }}
+                onCancel={() => setConfirmDialog({ open: false })}
+            />
     </div>
   );
 };

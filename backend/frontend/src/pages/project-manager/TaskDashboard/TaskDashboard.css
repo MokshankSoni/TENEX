@@ -523,43 +523,55 @@
 
 
 .comment-item {
-  background-color: #f8fafc;
-  padding: 15px 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  padding: 1rem 1.2rem;
+  margin-bottom: 1.1rem;
+  border: 1px solid #f0f4f8;
+  transition: box-shadow 0.2s;
 }
-
+.comment-item:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
 .comment-header-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
-  font-size: 14px;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
 }
-
-.comment-user-details {
+.user-details.comment-user-details {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.comment-user-details .user-icon {
-  font-size: 20px;
-  color: #94a3b8;
-}
-
-.comment-timestamp {
-  color: #64748b;
+  gap: 0.5rem;
   font-weight: 500;
+  color: #2d3a4a;
 }
-
+.user-icon {
+  color: #4a90e2;
+  font-size: 1.3rem;
+}
+.user-role-badge {
+  background: #e3f2fd;
+  color: #1976d2;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 8px;
+  margin-left: 0.5rem;
+  letter-spacing: 0.5px;
+}
+.comment-timestamp {
+  color: #8a99b3;
+  font-size: 0.85rem;
+  font-weight: 400;
+}
 .comment-content-text {
-  color: #475569;
+  color: #374151;
+  font-size: 1rem;
   line-height: 1.6;
-  font-size: 15px;
-  margin: 0;
+  margin: 0.2rem 0 0 0;
+  word-break: break-word;
 }
 
 .new-comment-input-area {
@@ -798,4 +810,31 @@
   .add-comment-button {
     margin-top: 10px;
   }
+}
+
+.section-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.7rem;
+}
+
+.view-all-section-btn {
+  display: flex;
+  align-items: center;
+  background: #e3f2fd;
+  color: #1976d2;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+  box-shadow: 0 1px 3px rgba(25, 118, 210, 0.04);
+}
+
+.view-all-section-btn:hover {
+  background: #1976d2;
+  color: #fff;
 } 

@@ -203,7 +203,7 @@ public class AuthController {
     }
 
     @GetMapping("/users")
-    @PreAuthorize("hasRole('TENANT_ADMIN')")
+    @PreAuthorize("hasAnyRole('TENANT_ADMIN', 'PROJECT_MANAGER')")
     public ResponseEntity<?> getAllUsers() {
         String currentTenant = TenantContext.getCurrentTenant();
 
