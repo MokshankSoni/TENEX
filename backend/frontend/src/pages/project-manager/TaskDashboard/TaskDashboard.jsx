@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import axios from 'axios';
 import {
     FaArrowLeft, FaEdit, FaTrash, FaCheck, FaPaperclip,
     FaEllipsisV, FaUserCircle, FaClock, FaCalendarAlt,
@@ -8,96 +9,107 @@ import {
     FaDownload, FaChevronRight
 } from 'react-icons/fa';
 import './TaskDashboard.css';
+import { TASK_ENDPOINTS } from '../../../config/apiEndpoints';
+import { getToken, getTenantId } from '../../../utils/storageUtils';
 
 const TaskDashboard = () => {
     const navigate = useNavigate();
-  const { taskId } = useParams();
+    const { taskId } = useParams();
     const [showStatusDropdown, setShowStatusDropdown] = useState(false);
     const [newComment, setNewComment] = useState('');
     const [newChecklistItem, setNewChecklistItem] = useState('');
+    const [taskDetails, setTaskDetails] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    // Hardcoded data for demonstration
-    const taskData = {
-        id: 'TASK-001',
-        title: 'Implement User Authentication System',
-        description: 'Develop a secure authentication system with JWT tokens, including login, registration, and password reset functionality. This system should handle user sessions securely and provide proper error handling.',
-        status: 'IN_PROGRESS',
-        priority: 'HIGH',
-        dueDate: '2024-03-15T00:00:00Z', // Changed to ISO string for consistent date parsing
-        estimatedTime: '40 hours',
-        project: {
-            id: 'PROJ-001',
-            name: 'E-commerce Platform'
-        },
-        createdBy: {
-            id: 1,
-            name: 'John Doe',
-            avatar: null
-        },
-        assignedTo: {
-            id: 2,
-            name: 'Jane Smith',
-            avatar: null
-        },
-        createdAt: '2024-02-01T10:00:00Z',
-        updatedAt: '2024-02-15T14:30:00Z',
-        checklist: [
-            { id: 1, text: 'Set up JWT authentication', completed: true },
-            { id: 2, text: 'Implement login functionality', completed: true },
-            { id: 3, text: 'Create registration system', completed: false },
-            { id: 4, text: 'Add password reset feature', completed: false },
-            { id: 5, text: 'Add rate limiting for security', completed: false } // Added this based on image
-        ],
-        statusHistory: [
-            // Note: Status history is not visible in the provided images, so it's kept as data but not rendered.
-            { id: 1, oldStatus: 'TODO', newStatus: 'IN_PROGRESS', changedBy: 'John Doe', timestamp: '2024-02-01T10:00:00' },
-            { id: 2, oldStatus: 'IN_PROGRESS', newStatus: 'IN_REVIEW', changedBy: 'Jane Smith', timestamp: '2024-02-10T15:30:00' },
-            { id: 3, oldStatus: 'IN_REVIEW', newStatus: 'IN_PROGRESS', changedBy: 'John Doe', timestamp: '2024-02-15T14:30:00' }
-        ],
-        comments: [
-            { id: 1, user: 'John Doe', content: 'Started working on the authentication system. JWT setup is complete.', timestamp: '2024-02-01T10:05:00' },
-            { id: 2, user: 'Jane Smith', content: 'Please make sure to implement rate limiting for login attempts to prevent brute force attacks.', timestamp: '2024-02-02T11:20:00' },
-            { id: 3, user: 'John Doe', content: 'Will add rate limiting in the next iteration. Currently focusing on core functionality.', timestamp: '2024-02-03T09:15:00' } // Added this based on image
-        ],
-        attachments: [
-            { id: 1, name: 'auth-design.pdf', type: 'application/pdf', size: '2.5MB', uploadedBy: 'John Doe', timestamp: '2024-02-01T10:10:00' },
-            { id: 2, name: 'api-specs.docx', type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', size: '1.2MB', uploadedBy: 'Jane Smith', timestamp: '2024-02-02T11:30:00' },
-            { id: 3, name: 'security-requirements.txt', type: 'text/plain', size: '45KB', uploadedBy: 'Jane Smith', timestamp: '2024-02-02T11:30:00' } // Added this based on image
-        ]
-    };
+    useEffect(() => {
+        const fetchTaskDetails = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                const token = getToken();
+                const tenantId = getTenantId();
+                if (!token) {
+                    setError('Authentication token not found. Please login again.');
+                    navigate('/signin');
+                    return;
+                }
+                if (!tenantId) {
+                    setError('Tenant ID not found. Please login again.');
+                    navigate('/signin');
+                    return;
+                }
+                const response = await axios.get(TASK_ENDPOINTS.GET_TASK(taskId), {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'X-TenantID': tenantId
+                    }
+                });
+                console.log(response.data);
+                setTaskDetails(response.data);
+                
+            } catch (err) {
+                console.error('Error fetching task details:', err);
+                if (err.response?.status === 401) {
+                    setError('Session expired. Please login again.');
+                } else if (err.response?.status === 403) {
+                    setError('You do not have permission to access this task.');
+                } else {
+                    setError('Failed to fetch task details. Please try again.');
+                }
+            } finally {
+                setLoading(false);
+            }
+        };
+        if (taskId) fetchTaskDetails();
+    }, [taskId, navigate]);
 
+    // Helper functions for status and priority colors (case-sensitive)
     const getStatusColor = (status) => {
         switch (status) {
             case 'TODO': return '#F59E0B'; // Amber
-            case 'IN_PROGRESS': return '#2563EB'; // Blue
-            case 'IN_REVIEW': return '#8B5CF6'; // Purple
-            case 'COMPLETED': return '#10B981'; // Green
-            case 'BLOCKED': return '#EF4444'; // Red
+            case 'In_Progress': return '#2563EB'; // Blue
+            case 'Completed': return '#10B981'; // Green
             default: return '#6B7280'; // Gray
         }
     };
 
     const getPriorityColor = (priority) => {
         switch (priority) {
-            case 'HIGH': return '#EF4444'; // Red
+            case 'High': return '#EF4444'; // Red
             case 'MEDIUM': return '#F59E0B'; // Amber
             case 'LOW': return '#10B981'; // Green
             default: return '#6B7280'; // Gray
         }
     };
 
-    const getFileIcon = (fileType) => {
-        if (fileType.includes('image')) return <FaFileImage />;
-        if (fileType.includes('pdf')) return <FaFilePdf />;
-        if (fileType.includes('word') || fileType.includes('officedocument.wordprocessingml')) return <FaFileWord />;
-        if (fileType.includes('excel') || fileType.includes('officedocument.spreadsheetml')) return <FaFileExcel />;
-        if (fileType.includes('zip') || fileType.includes('rar') || fileType.includes('archive')) return <FaFileArchive />;
-        return <FaFile />;
-    };
-
+    // Helper for date formatting
     const formatReadableDate = (isoString) => {
+        if (!isoString) return '';
         const date = new Date(isoString);
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    };
+
+    // Render loading or error states
+    if (loading) {
+        return <div className="loading-state">Loading task details...</div>;
+    }
+    if (error) {
+        return <div className="error-state">{error}</div>;
+    }
+    if (!taskDetails) {
+        return <div className="error-state">No task details found.</div>;
+    }
+
+    const getFileIcon = (fileType) => {
+        const type = fileType || '';
+        if (type.includes('image')) return <FaFileImage />;
+        if (type.includes('pdf')) return <FaFilePdf />;
+        if (type.includes('word') || type.includes('officedocument.wordprocessingml')) return <FaFileWord />;
+        if (type.includes('excel') || type.includes('officedocument.spreadsheetml')) return <FaFileExcel />;
+        if (type.includes('zip') || type.includes('rar') || type.includes('archive')) return <FaFileArchive />;
+        return <FaFile />;
     };
 
     const formatCommentTime = (isoString) => {
@@ -107,9 +119,10 @@ const TaskDashboard = () => {
     };
 
     const calculateChecklistProgress = () => {
-        if (taskData.checklist.length === 0) return 0;
-        const completed = taskData.checklist.filter(item => item.completed).length;
-        return Math.round((completed / taskData.checklist.length) * 100);
+        const checklist = taskDetails.checklists || [];
+        if (checklist.length === 0) return 0;
+        const completed = checklist.filter(item => item.completed).length;
+        return Math.round((completed / checklist.length) * 100);
     };
 
     const handleStatusChange = (newStatus) => {
@@ -130,24 +143,24 @@ const TaskDashboard = () => {
             <div className="task-header-main">
                 <div className="task-header-left">
                     <div className="task-title-section">
-                        <div className="task-id-badge">{taskData.id}</div>
-                        <h1 className="task-detail-title">{taskData.title}</h1>
+                        <div className="task-id-badge">{taskDetails.id}</div>
+                        <h1 className="task-detail-title">{taskDetails.title}</h1>
                     </div>
                     <div className="task-meta-info">
                         <div className="meta-info-group">
-                            <span className="status-label" style={{ backgroundColor: getStatusColor(taskData.status) }}>
+                            <span className="status-label" style={{ backgroundColor: getStatusColor(taskDetails.status) }}>
                                 <span className="status-dot"></span>
-                                {taskData.status.replace('_', ' ')}
+                                {taskDetails.status}
                             </span>
-                            <span className="priority-label" style={{ backgroundColor: getPriorityColor(taskData.priority) }}>
+                            <span className="priority-label" style={{ backgroundColor: getPriorityColor(taskDetails.priority) }}>
                                 <span className="priority-dot"></span>
-                                {taskData.priority}
+                                {taskDetails.priority}
                             </span>
                         </div>
                         <div className="meta-info-group">
                             <span className="due-date-info">
                                 <FaCalendarAlt />
-                                <span>Due {formatReadableDate(taskData.dueDate)}</span>
+                                <span>Due {formatReadableDate(taskDetails.dueDate)}</span>
                             </span>
                         </div>
                     </div>
@@ -168,23 +181,15 @@ const TaskDashboard = () => {
                 {/* Description Card */}
                 <div className="task-card description-card">
                     <h2 className="card-title">Description</h2>
-                    <p className="task-description-text">{taskData.description}</p>
+                    <p className="task-description-text">{taskDetails.description}</p>
                     <div className="user-date-info-grid">
                         <div>
-                            <span className="info-label">Created By</span>
-                            <div className="user-details"><FaUserCircle className="user-icon" /><span>{taskData.createdBy.name}</span></div>
-                        </div>
-                        <div>
-                            <span className="info-label">Assigned To</span>
-                            <div className="user-details"><FaUserCircle className="user-icon" /><span>{taskData.assignedTo.name}</span></div>
-                        </div>
-                        <div>
                             <span className="info-label">Created</span>
-                            <span className="date-time">{formatReadableDate(taskData.createdAt)}</span>
+                            <span className="date-time">{formatReadableDate(taskDetails.createdAt)}</span>
                         </div>
                         <div>
                             <span className="info-label">Last Updated</span>
-                            <span className="date-time">{formatReadableDate(taskData.updatedAt)}</span>
+                            <span className="date-time">{formatReadableDate(taskDetails.updatedAt)}</span>
                         </div>
                     </div>
                 </div>
@@ -197,10 +202,10 @@ const TaskDashboard = () => {
                         <div className="progress-bar-fill" style={{ width: `${calculateChecklistProgress()}%` }}></div>
                     </div>
                     <div className="checklist-items-list">
-                        {taskData.checklist.map(item => (
+                        {(taskDetails.checklists || []).map(item => (
                             <div key={item.id} className="checklist-item-entry">
                                 <input type="checkbox" checked={item.completed} onChange={() => {}} />
-                                <span className={item.completed ? 'completed-item' : ''}>{item.text}</span>
+                                <span className={item.completed ? 'completed-item' : ''}>{item.item}</span>
                                 <button className="remove-checklist-item"><FaTimes /></button>
                             </div>
                         ))}
@@ -220,7 +225,7 @@ const TaskDashboard = () => {
                 <div className="task-card comments-card">
                     <h2 className="card-title">Comments</h2>
                     <div className="comments-list-container">
-                        {taskData.comments.map(comment => (
+                        {taskDetails.comments.map(comment => (
                             <div key={comment.id} className="comment-item">
                                 <div className="comment-header-row">
                                     <div className="user-details comment-user-details"><FaUserCircle className="user-icon" /><span>{comment.user}</span></div>
@@ -248,12 +253,14 @@ const TaskDashboard = () => {
                         <span>Drag files here or click to upload</span>
                     </div>
                     <div className="attachments-list-container">
-                        {taskData.attachments.map(attachment => (
+                        {(taskDetails.attachments || []).map(attachment => (
                             <div key={attachment.id} className="attachment-item-entry">
-                                <div className="file-icon-wrapper">{getFileIcon(attachment.type)}</div>
+                                <div className="file-icon-wrapper">{getFileIcon(attachment.fileType)}</div>
                                 <div className="attachment-details">
-                                    <span className="attachment-file-name">{attachment.name}</span>
-                                    <span className="attachment-meta-info">{attachment.size} • {attachment.uploadedBy}</span>
+                                    <span className="attachment-file-name">{attachment.fileName}</span>
+                                    <span className="attachment-meta-info">
+                                        {attachment.fileType} • {attachment.fileSize} bytes
+                                    </span>
                                 </div>
                                 <button className="download-attachment-button"><FaDownload /></button>
                             </div>
