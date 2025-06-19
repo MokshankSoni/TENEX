@@ -142,12 +142,46 @@ public class TaskService {
                 logger.info("Deleting task with ID: {} for tenant: {}", id, TenantContext.getCurrentTenant());
                 return taskRepository.findById(id)
                                 .map(task -> {
-                                        taskRepository.delete(task);
+                                        try {
+                                                // First detach the task from its project
+                                                Project project = task.getProject();
+                                                if (project != null) {
+                                                        project.getTasks().remove(task);
+                                                        projectRepository.save(project);
+                                                }
 
-                                        // Log activity
-                                        activityLogUtil.logActivity(ActivityAction.DELETE_TASK, "Task", id);
+                                                // Clear all relationships
+                                                if (task.getComments() != null) {
+                                                        task.getComments().clear();
+                                                }
+                                                if (task.getStatusHistory() != null) {
+                                                        task.getStatusHistory().clear();
+                                                }
+                                                if (task.getChecklists() != null) {
+                                                        task.getChecklists().clear();
+                                                }
+                                                if (task.getAttachments() != null) {
+                                                        task.getAttachments().clear();
+                                                }
+                                                if (task.getUserTaskAssignments() != null) {
+                                                        task.getUserTaskAssignments().clear();
+                                                }
 
-                                        return true;
+                                                // Save and flush to ensure relationships are cleared
+                                                taskRepository.saveAndFlush(task);
+
+                                                // Now explicitly delete the task
+                                                taskRepository.delete(task);
+                                                taskRepository.flush();
+
+                                                // Log activity
+                                                activityLogUtil.logActivity(ActivityAction.DELETE_TASK, "Task", id);
+
+                                                return true;
+                                        } catch (Exception e) {
+                                                logger.error("Error deleting task: {}", e.getMessage(), e);
+                                                throw new RuntimeException("Failed to delete task", e);
+                                        }
                                 })
                                 .orElse(false);
         }

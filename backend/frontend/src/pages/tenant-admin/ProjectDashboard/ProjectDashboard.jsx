@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaProjectDiagram, FaUsers, FaTasks, FaChartPie, FaPlus, FaUserPlus, FaClipboardList, FaUserCircle, FaPaperclip, FaFlag, FaEye, FaArrowLeft, FaTimes, FaToggleOn, FaToggleOff, FaUpload, FaSearch, FaFile, FaFileAlt, FaFileImage, FaFilePdf, FaFileWord, FaFileExcel, FaFileArchive, FaDownload, FaTrash, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
 import axios from 'axios';
-import { PROJECT_ENDPOINTS, AUTH_ENDPOINTS } from '../../../config/apiEndpoints';
+import { PROJECT_ENDPOINTS, AUTH_ENDPOINTS,ATTACHMENT_ENDPOINTS } from '../../../config/apiEndpoints';
 import { useAuth } from '../../../hooks/useAuth';
 import { getToken, getTenantId } from '../../../utils/storageUtils';
 import './ProjectDashboard.css';
@@ -371,7 +371,7 @@ const ProjectDashboard = () => {
       formData.append('file', selectedFile);
       formData.append('taskId', selectedTaskId);
 
-      const response = await axios.post('http://localhost:8080/api/attachments/upload', formData, {
+      const response = await axios.post(ATTACHMENT_ENDPOINTS.UPLOAD_ATTACHMENT, formData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'X-TenantID': tenantId
@@ -458,7 +458,7 @@ const ProjectDashboard = () => {
       }
 
       const response = await axios.get(
-        `${PROJECT_ENDPOINTS.GET_ATTACHMENT_DOWNLOAD}/${attachment.id}/download`,
+        ATTACHMENT_ENDPOINTS.GET_ATTACHMENT_DOWNLOAD(attachment.id),
         {
           headers: {
             'Authorization': `Bearer ${token}`,

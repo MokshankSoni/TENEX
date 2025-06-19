@@ -8,7 +8,7 @@ import DeleteProjectPopup from './DeleteProjectPopUp/DeleteProjectPopup';
 import ActivityLogsPopup from './ActivityLogsPopup/ActivityLogsPopup';
 import ProjectReportPopUp from './ProjectReportPopUp/ProjectReportPopUp';
 import { getToken, getTenantId, getUserData } from '../../../utils/storageUtils';
-import { PROJECT_ENDPOINTS, AUTH_ENDPOINTS, TASK_ENDPOINTS, ANALYTICS_ENDPOINTS, ACTIVITY_LOG_ENDPOINTS } from '../../../config/apiEndpoints';
+import { PROJECT_ENDPOINTS, AUTH_ENDPOINTS, TASK_ENDPOINTS, ACTIVITY_LOG_ENDPOINTS } from '../../../config/apiEndpoints';
 import axios from 'axios';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
@@ -160,32 +160,7 @@ const TenantAdminDashboard = () => {
     }
   };
 
-  // Temporary hardcoded data
-  const dashboardData = {
-    totalProjects: 42,
-    activeProjects: 30,
-    completedProjects: 12,
-    totalUsers: 120,
-    userBreakdown: {
-      projectManagers: 15,
-      teamMembers: 85,
-      clients: 20
-    },
-    openTasks: 185,
-    overdueTasks: 25,
-    dueThisWeek: 45,
-    projectStatus: [
-      { status: 'Completed', count: 12, color: '#4CAF50' },
-      { status: 'In Progress', count: 30, color: '#2196F3' }
-    ],
-    recentActivity: [
-      { user: 'John D.', action: 'created Project "New Marketing Initiative"', time: '5 mins ago' },
-      { user: 'Sarah M.', action: 'updated Task "Website Redesign"', time: '15 mins ago' },
-      { user: 'Mike R.', action: 'added new team member', time: '1 hour ago' },
-      { user: 'Lisa K.', action: 'completed milestone "Phase 1"', time: '2 hours ago' },
-      { user: 'David P.', action: 'uploaded project documents', time: '3 hours ago' }
-    ]
-  };
+  
 
   const handleProfileClick = () => {
     // This function will be implemented later for profile details

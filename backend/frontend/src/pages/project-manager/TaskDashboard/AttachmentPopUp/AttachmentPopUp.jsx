@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import './AttachmentPopUp.css';
 import { FaTimes, FaDownload } from 'react-icons/fa';
 
-const AttachmentPopUp = ({ isOpen, attachments, getFileIcon, getUserInfo, formatCommentTime, onClose }) => {
+const AttachmentPopUp = ({ isOpen, attachments, getFileIcon, getUserInfo, formatCommentTime, onClose, handleDownloadAttachment }) => {
     const [search, setSearch] = useState('');
     if (!isOpen) return null;
 
@@ -51,7 +51,7 @@ const AttachmentPopUp = ({ isOpen, attachments, getFileIcon, getUserInfo, format
                                                 )} • {formatCommentTime(attachment.uploadedAt)}
                                             </span>
                                         </div>
-                                        <button className="attachment-popup-download-btn"><FaDownload /></button>
+                                        <button className="attachment-popup-download-btn" onClick={() => handleDownloadAttachment && handleDownloadAttachment(attachment)}><FaDownload /></button>
                                     </div>
                                 </div>
                             );

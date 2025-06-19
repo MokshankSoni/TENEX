@@ -9,11 +9,13 @@ import {
     FaDownload, FaChevronRight, FaEye
 } from 'react-icons/fa';
 import './TaskDashboard.css';
-import { TASK_ENDPOINTS, AUTH_ENDPOINTS, TASK_CHECKLIST } from '../../../config/apiEndpoints';
-import { getToken, getTenantId } from '../../../utils/storageUtils';
+import { TASK_ENDPOINTS, AUTH_ENDPOINTS, TASK_CHECKLIST, COMMENT_ENDPOINTS, ATTACHMENT_ENDPOINTS } from '../../../config/apiEndpoints';
+import { getToken, getTenantId, getUserData } from '../../../utils/storageUtils';
 import CommentPopUp from './CommentPopUp/CommentPopUp';
 import AttachmentPopUp from './AttachmentPopUp/AttachmentPopUp';
+import EditTaskPopup from './EditTaskPopup/EditTaskPopup';
 import ConfirmDialog from '../../../components/common/ConfirmDialog/ConfirmDialog';
+import Toast from '../../../components/common/Toast/Toast';
 
 const TaskDashboard = () => {
     const navigate = useNavigate();
@@ -28,6 +30,10 @@ const TaskDashboard = () => {
     const [showCommentPopUp, setShowCommentPopUp] = useState(false);
     const [showAttachmentPopUp, setShowAttachmentPopUp] = useState(false);
     const [confirmDialog, setConfirmDialog] = useState({ open: false, message: '', onConfirm: null });
+    const [toast, setToast] = useState({ isOpen: false, message: '' });
+    const [selectedAttachmentFile, setSelectedAttachmentFile] = useState(null);
+    const [uploadingAttachment, setUploadingAttachment] = useState(false);
+    const [showEditTaskModal, setShowEditTaskModal] = useState(false);
 
     useEffect(() => {
         const fetchTaskDetails = async () => {
@@ -231,6 +237,7 @@ const TaskDashboard = () => {
                             }
                         });
                         setTaskDetails(response.data);
+                        setToast({ isOpen: true, message: 'Checklist Item Added' });
                     }
                 } catch (err) {
                     console.error('Error adding checklist item:', err);
@@ -267,6 +274,7 @@ const TaskDashboard = () => {
                             }
                         });
                         setTaskDetails(response.data);
+                        setToast({ isOpen: true, message: 'Checklist Item Removed' });
                     }
                 } catch (err) {
                     console.error('Error removing checklist item:', err);
@@ -313,12 +321,232 @@ const TaskDashboard = () => {
         });
     };
 
-  return (
+    // Add comment handler
+    const handleAddComment = async () => {
+        if (!newComment.trim()) return;
+        const token = getToken();
+        const tenantId = getTenantId();
+        if (!token || !tenantId) {
+            setError('Authentication or tenant info missing. Please login again.');
+            return;
+        }
+        try {
+            await axios.post(
+                COMMENT_ENDPOINTS.ADD_COMMENT(taskId),
+                { content: newComment.trim() },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'X-TenantID': tenantId
+                    }
+                }
+            );
+            setNewComment('');
+            // Refresh task details to update comments
+            if (taskId) {
+                const response = await axios.get(TASK_ENDPOINTS.GET_TASK(taskId), {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'X-TenantID': tenantId
+                    }
+                });
+                setTaskDetails(response.data);
+                setToast({ isOpen: true, message: 'Comment Added Successfully' });
+            }
+        } catch (err) {
+            console.error('Error adding comment:', err);
+            setError('Failed to add comment. Please try again.');
+        }
+    };
+
+    // Delete comment handler
+    const handleDeleteComment = (commentId) => {
+        setConfirmDialog({
+            open: true,
+            message: 'Are you sure you want to delete this comment?',
+            onConfirm: async () => {
+                const token = getToken();
+                const tenantId = getTenantId();
+                if (!token || !tenantId) return setConfirmDialog({ open: false });
+                try {
+                    await axios.delete(COMMENT_ENDPOINTS.DELETE_COMMENT(commentId), {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                            'X-TenantID': tenantId
+                        }
+                    });
+                    // Refresh task details to update comments
+                    if (taskId) {
+                        const response = await axios.get(TASK_ENDPOINTS.GET_TASK(taskId), {
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json',
+                                'X-TenantID': tenantId
+                            }
+                        });
+                        setTaskDetails(response.data);
+                    }
+                    setToast({ isOpen: true, message: 'Comment deleted!' });
+                } catch (err) {
+                    console.error('Error deleting comment:', err);
+                    setError('Failed to delete comment. Please try again.');
+                } finally {
+                    setConfirmDialog({ open: false });
+                }
+            }
+        });
+    };
+
+    // Upload attachment handler
+    const handleAttachmentFileChange = (e) => {
+        setSelectedAttachmentFile(e.target.files[0]);
+    };
+
+    const handleUploadAttachment = async () => {
+        if (!selectedAttachmentFile) return;
+        setUploadingAttachment(true);
+        const token = getToken();
+        const tenantId = getTenantId();
+        if (!token || !tenantId) {
+            setError('Authentication or tenant info missing. Please login again.');
+            setUploadingAttachment(false);
+            return;
+        }
+        try {
+            const formData = new FormData();
+            formData.append('file', selectedAttachmentFile);
+            formData.append('taskId', taskDetails.id);
+            await axios.post(ATTACHMENT_ENDPOINTS.UPLOAD_ATTACHMENT, formData, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'X-TenantID': tenantId
+                }
+            });
+            setSelectedAttachmentFile(null);
+            setToast({ isOpen: true, message: 'Attachment uploaded!' });
+            // Refresh task details
+            if (taskId) {
+                const response = await axios.get(TASK_ENDPOINTS.GET_TASK(taskId), {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'X-TenantID': tenantId
+                    }
+                });
+                setTaskDetails(response.data);
+            }
+        } catch (err) {
+            console.error('Error uploading attachment:', err);
+            setError('Failed to upload attachment. Please try again.');
+        } finally {
+            setUploadingAttachment(false);
+        }
+    };
+
+    // Download attachment handler
+    const handleDownloadAttachment = async (attachment) => {
+        const token = getToken();
+        const tenantId = getTenantId();
+        if (!token || !tenantId) {
+            setError('Authentication or tenant info missing. Please login again.');
+            return;
+        }
+        try {
+            const response = await axios.get(
+                ATTACHMENT_ENDPOINTS.GET_ATTACHMENT_DOWNLOAD(attachment.id),
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'X-TenantID': tenantId
+                    },
+                    responseType: 'blob'
+                }
+            );
+            const blob = new Blob([response.data], { type: attachment.fileType });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = attachment.fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            setToast({ isOpen: true, message: 'Attachment downloaded!' });
+        } catch (err) {
+            console.error('Error downloading attachment:', err);
+            setError('Failed to download attachment. Please try again.');
+        }
+    };
+
+    const handleOpenEditTask = () => {
+        setShowEditTaskModal(true);
+    };
+
+    const handleCloseEditTask = () => {
+        setShowEditTaskModal(false);
+    };
+
+    const handleTaskUpdated = async () => {
+        try {
+            const token = getToken();
+            const tenantId = getTenantId();
+            const response = await axios.get(TASK_ENDPOINTS.GET_TASK(taskId), {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'X-TenantID': tenantId
+                }
+            });
+            setTaskDetails(response.data);
+            setToast({ isOpen: true, message: 'Task updated successfully' });
+        } catch (err) {
+            console.error('Error refreshing task details:', err);
+        }
+    };
+
+    const handleDeleteTask = () => {
+        setConfirmDialog({
+            open: true,
+            message: 'Are you sure you want to delete this task? This action cannot be undone.',
+            onConfirm: async () => {
+                try {
+                    const token = getToken();
+                    const tenantId = getTenantId();
+                    
+                    if (!token || !tenantId) {
+                        console.error('Missing authentication credentials');
+                        return;
+                    }
+
+                    await axios.delete(TASK_ENDPOINTS.DELETE_TASK(taskId), {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                            'X-TenantID': tenantId
+                        }
+                    });
+
+                    setToast({ isOpen: true, message: 'Task deleted successfully' });
+                    // Navigate back after successful deletion
+                    navigate(-1);
+                } catch (err) {
+                    console.error('Error deleting task:', err);
+                    setToast({ isOpen: true, message: 'Failed to delete task. Please try again.' });
+                } finally {
+                    setConfirmDialog({ open: false, message: '', onConfirm: null });
+                }
+            }
+        });
+    };
+
+    return (
         <div className="task-dashboard">
             {/* Breadcrumb Navigation */}
             <div className="breadcrumb">
                 <FaArrowLeft className="back-arrow" onClick={() => navigate(-1)} />
-                
             </div>
 
             {/* Header Section */}
@@ -348,11 +576,11 @@ const TaskDashboard = () => {
                     </div>
                 </div>
                 <div className="header-actions-right">
-                    <button className="action-button-header edit-button">
+                    <button className="action-button-header edit-button" onClick={handleOpenEditTask}>
                         <FaEdit />
                         <span>Edit Task</span>
                     </button>
-                    <button className="action-button-header delete-button">
+                    <button className="action-button-header delete-button" onClick={handleDeleteTask}>
                         <FaTrash />
                     </button>
                 </div>
@@ -416,6 +644,9 @@ const TaskDashboard = () => {
                             const latest = (taskDetails.comments || []).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
                             if (!latest) return <div className="comment-item comment-empty">No comments yet.</div>;
                             const userInfo = getUserInfo(latest.userId);
+                            // Show delete icon if current user is the author
+                            const currentUser = getUserData();
+                            const currentUserId = currentUser?.id;
                             return (
                                 <div key={latest.id} className="comment-item">
                                     <div className="comment-header-row">
@@ -427,6 +658,11 @@ const TaskDashboard = () => {
                                             )}
                                         </div>
                                         <span className="comment-timestamp">{formatCommentTime(latest.createdAt)}</span>
+                                        {currentUserId === latest.userId && (
+                                            <button className="delete-comment-button" onClick={() => handleDeleteComment(latest.id)} title="Delete Comment" style={{ background: 'none', border: 'none', cursor: 'pointer', marginLeft: 8 }}>
+                                                <FaTrash style={{ color: '#e53e3e' }} />
+                                            </button>
+                                        )}
                                     </div>
                                     <p className="comment-content-text">{latest.content}</p>
                                 </div>
@@ -439,7 +675,7 @@ const TaskDashboard = () => {
                             value={newComment}
                             onChange={(e) => setNewComment(e.target.value)}
                         />
-                        <button className="add-comment-button">Add Comment</button>
+                        <button className="add-comment-button" onClick={handleAddComment}>Add Comment</button>
                     </div>
                     <CommentPopUp
                         isOpen={showCommentPopUp}
@@ -449,6 +685,13 @@ const TaskDashboard = () => {
                         formatCommentTime={formatCommentTime}
                         onClose={() => setShowCommentPopUp(false)}
                     />
+                    {showEditTaskModal && (
+                        <EditTaskPopup
+                            task={taskDetails}
+                            onClose={handleCloseEditTask}
+                            onTaskUpdated={handleTaskUpdated}
+                        />
+                    )}
                 </div>
 
                 {/* Attachments Card */}
@@ -462,6 +705,10 @@ const TaskDashboard = () => {
                     <div className="upload-zone">
                         <FaPaperclip className="upload-icon-main" />
                         <span>Drag files here or click to upload</span>
+                        <input type="file" onChange={handleAttachmentFileChange} style={{ marginLeft: 12 }} />
+                        <button className="add-checklist-button" onClick={handleUploadAttachment} disabled={!selectedAttachmentFile || uploadingAttachment} style={{ marginLeft: 8 }}>
+                            {uploadingAttachment ? 'Uploading...' : 'Upload'}
+                        </button>
                     </div>
                     <div className="attachments-list-container">
                         {(taskDetails.attachments || []).slice(0, 3).map(attachment => (
@@ -473,7 +720,7 @@ const TaskDashboard = () => {
                                         {attachment.fileType} • {attachment.fileSize} bytes
                                     </span>
                                 </div>
-                                <button className="download-attachment-button"><FaDownload /></button>
+                                <button className="download-attachment-button" onClick={() => handleDownloadAttachment(attachment)}><FaDownload /></button>
                             </div>
                         ))}
                     </div>
@@ -484,6 +731,7 @@ const TaskDashboard = () => {
                         getUserInfo={getUserInfo}
                         formatCommentTime={formatCommentTime}
                         onClose={() => setShowAttachmentPopUp(false)}
+                        handleDownloadAttachment={handleDownloadAttachment}
                     />
                 </div>
             </div>
@@ -507,8 +755,20 @@ const TaskDashboard = () => {
                 onConfirm={async () => { if (confirmDialog.onConfirm) await confirmDialog.onConfirm(); }}
                 onCancel={() => setConfirmDialog({ open: false })}
             />
-    </div>
-  );
+            <Toast
+                isOpen={toast.isOpen}
+                message={toast.message}
+                onClose={() => setToast({ ...toast, isOpen: false })}
+            />
+            {showEditTaskModal && (
+                <EditTaskPopup
+                    task={taskDetails}
+                    onClose={handleCloseEditTask}
+                    onTaskUpdated={handleTaskUpdated}
+                />
+            )}
+        </div>
+    );
 };
 
 export default TaskDashboard; 

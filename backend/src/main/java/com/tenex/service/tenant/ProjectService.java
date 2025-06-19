@@ -132,18 +132,58 @@ public class ProjectService {
                 }
 
                 String tenantId = TenantContext.getCurrentTenant();
-                Optional<Project> project = projectRepository.findByIdWithManual(id);
+                logger.info("Deleting project with ID: {} for tenant: {}", id, tenantId);
 
-                if (project.isPresent() && project.get().getTenantId().equals(tenantId)) {
-                        projectRepository.deleteById(id);
+                return projectRepository.findByIdWithManual(id)
+                                .map(project -> {
+                                        try {
+                                                if (!project.getTenantId().equals(tenantId)) {
+                                                        return false;
+                                                }
 
-                        // Log activity
-                        activityLogUtil.logActivity(ActivityAction.DELETE_PROJECT, "Project", id);
+                                                // Clear all relationships
+                                                if (project.getTasks() != null) {
+                                                        project.getTasks().forEach(task -> {
+                                                                if (task.getComments() != null)
+                                                                        task.getComments().clear();
+                                                                if (task.getStatusHistory() != null)
+                                                                        task.getStatusHistory().clear();
+                                                                if (task.getChecklists() != null)
+                                                                        task.getChecklists().clear();
+                                                                if (task.getAttachments() != null)
+                                                                        task.getAttachments().clear();
+                                                                if (task.getUserTaskAssignments() != null)
+                                                                        task.getUserTaskAssignments().clear();
+                                                        });
+                                                        project.getTasks().clear();
+                                                }
 
-                        return true;
-                }
+                                                if (project.getUserAssignments() != null) {
+                                                        project.getUserAssignments().clear();
+                                                }
 
-                return false;
+                                                if (project.getMilestones() != null) {
+                                                        project.getMilestones().clear();
+                                                }
+
+                                                // Save and flush to ensure relationships are cleared
+                                                projectRepository.saveAndFlush(project);
+
+                                                // Now delete the project
+                                                projectRepository.delete(project);
+                                                projectRepository.flush();
+
+                                                // Log activity
+                                                activityLogUtil.logActivity(ActivityAction.DELETE_PROJECT, "Project",
+                                                                id);
+
+                                                return true;
+                                        } catch (Exception e) {
+                                                logger.error("Error deleting project: {}", e.getMessage(), e);
+                                                throw new RuntimeException("Failed to delete project", e);
+                                        }
+                                })
+                                .orElse(false);
         }
 
         /**
@@ -228,8 +268,8 @@ public class ProjectService {
                                         projectMap.put("id", project.getId());
                                         projectMap.put("name", project.getName());
                                         projectMap.put("status", project.getStatus());
-                                        projectMap.put("start_date",project.getStartDate());
-                                        projectMap.put("end_date",project.getEndDate());
+                                        projectMap.put("start_date", project.getStartDate());
+                                        projectMap.put("end_date", project.getEndDate());
                                         return projectMap;
                                 })
                                 .collect(Collectors.toList());

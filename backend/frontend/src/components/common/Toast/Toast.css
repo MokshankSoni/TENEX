@@ -1,0 +1,26 @@
+.toast-container {
+  position: fixed;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.3s;
+}
+
+.toast-message {
+  background: #22c55e; /* Green shade for success */
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-size: 1rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  letter-spacing: 0.02em;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+} 

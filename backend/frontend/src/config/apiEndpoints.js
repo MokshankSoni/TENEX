@@ -82,28 +82,6 @@ export const ACTIVITY_LOG_ENDPOINTS = {
   DELETE_OLDEST_LOGS: `${BASE_URL}/activity-logs/oldest`
 };
 
-// Analytics endpoints
-export const ANALYTICS_ENDPOINTS = {
-  GET_PROJECT_ANALYTICS: `${BASE_URL}/analytics/projects`,
-  GET_TASK_ANALYTICS: `${BASE_URL}/analytics/tasks`,
-  GET_USER_ANALYTICS: `${BASE_URL}/analytics/users`,
-  GET_TENANT_ANALYTICS: `${BASE_URL}/analytics/tenants`
-};
-
-// File upload endpoints
-export const FILE_ENDPOINTS = {
-  UPLOAD_FILE: `${BASE_URL}/files/upload`,
-  GET_FILE: (id) => `${BASE_URL}/files/${id}`,
-  DELETE_FILE: (id) => `${BASE_URL}/files/${id}`
-};
-
-// Notification endpoints
-export const NOTIFICATION_ENDPOINTS = {
-  GET_NOTIFICATIONS: `${BASE_URL}/notifications`,
-  MARK_NOTIFICATION_READ: (id) => `${BASE_URL}/notifications/${id}/read`,
-  MARK_ALL_NOTIFICATIONS_READ: `${BASE_URL}/notifications/read-all`,
-  DELETE_NOTIFICATION: (id) => `${BASE_URL}/notifications/${id}`
-};
 
 // User Project Assignment Endpoints
 export const USER_PROJECT_ASSIGNMENT = {
@@ -117,4 +95,16 @@ export const TASK_CHECKLIST = {
     ADD_TASK_CHECKLIST: `${BASE_URL}/task-checklists`,
     REMOVE_TASK_CHECKLIST: (id) => `${BASE_URL}/task-checklists/${id}`,
     TOGGLE_STATUS_CHECKLIST: (id) => `${BASE_URL}/task-checklists/${id}/togglestatus`
+};
+
+// Comment Endpoints
+export const COMMENT_ENDPOINTS = {
+    ADD_COMMENT:(taskId)=> `${BASE_URL}/comments/task/${taskId}`,
+    DELETE_COMMENT:(commentId)=> `${BASE_URL}/comments/${commentId}`
+};
+
+// Comment Endpoints
+export const ATTACHMENT_ENDPOINTS = {
+  GET_ATTACHMENT_DOWNLOAD:(attachmentId) => `${BASE_URL}/attachments/${attachmentId}/download`,
+  UPLOAD_ATTACHMENT : `${BASE_URL}/attachments/upload`
 };
