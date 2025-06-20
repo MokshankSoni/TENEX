@@ -108,3 +108,10 @@ export const ATTACHMENT_ENDPOINTS = {
   GET_ATTACHMENT_DOWNLOAD:(attachmentId) => `${BASE_URL}/attachments/${attachmentId}/download`,
   UPLOAD_ATTACHMENT : `${BASE_URL}/attachments/upload`
 };
+
+// User Task Assignment Endpoints
+export const USER_TASK_ASSIGNMENT = {
+    ADD_TASK_MEMBER: `${BASE_URL}/task-assignments`,
+    REMOVE_TASK_MEMBER: (taskId, username) => `${BASE_URL}/task-assignments/${taskId}/user/${username}`,
+    ASSIGNED_TASK_MEMBERS: (taskId) => `${BASE_URL}/task-assignments/task/${taskId}`
+};

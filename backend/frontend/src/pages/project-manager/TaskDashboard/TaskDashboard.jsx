@@ -6,10 +6,10 @@ import {
     FaEllipsisV, FaUserCircle, FaClock, FaCalendarAlt,
     FaCheckCircle, FaTimes, FaPlus, FaFile, FaFileImage,
     FaFilePdf, FaFileWord, FaFileExcel, FaFileArchive,
-    FaDownload, FaChevronRight, FaEye
+    FaDownload, FaChevronRight, FaEye, FaUserPlus
 } from 'react-icons/fa';
 import './TaskDashboard.css';
-import { TASK_ENDPOINTS, AUTH_ENDPOINTS, TASK_CHECKLIST, COMMENT_ENDPOINTS, ATTACHMENT_ENDPOINTS } from '../../../config/apiEndpoints';
+import { TASK_ENDPOINTS, AUTH_ENDPOINTS, TASK_CHECKLIST, COMMENT_ENDPOINTS, ATTACHMENT_ENDPOINTS, PROJECT_ENDPOINTS, USER_TASK_ASSIGNMENT } from '../../../config/apiEndpoints';
 import { getToken, getTenantId, getUserData } from '../../../utils/storageUtils';
 import CommentPopUp from './CommentPopUp/CommentPopUp';
 import AttachmentPopUp from './AttachmentPopUp/AttachmentPopUp';
@@ -34,6 +34,9 @@ const TaskDashboard = () => {
     const [selectedAttachmentFile, setSelectedAttachmentFile] = useState(null);
     const [uploadingAttachment, setUploadingAttachment] = useState(false);
     const [showEditTaskModal, setShowEditTaskModal] = useState(false);
+    const [showMembersPopup, setShowMembersPopup] = useState(false);
+    const [showAddMemberPopup, setShowAddMemberPopup] = useState(false);
+    const [projectData, setProjectData] = useState(null);
 
     useEffect(() => {
         const fetchTaskDetails = async () => {
@@ -108,6 +111,30 @@ const TaskDashboard = () => {
         fetchAllUsers();
     }, []);
 
+    // Fetch project details after taskDetails is loaded
+    useEffect(() => {
+        const fetchProjectDetails = async () => {
+            if (!taskDetails?.projectId) return;
+            try {
+                const token = getToken();
+                const tenantId = getTenantId();
+                if (!token || !tenantId) return;
+                const response = await axios.get(PROJECT_ENDPOINTS.GET_PROJECT(taskDetails.projectId), {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'X-TenantID': tenantId
+                    }
+                });
+                setProjectData(response.data);
+            } catch (err) {
+                // Optionally handle error
+                // setProjectData(null);
+            }
+        };
+        fetchProjectDetails();
+    }, [taskDetails?.projectId]);
+
     // Helper functions for status and priority colors (case-sensitive)
     const getStatusColor = (status) => {
         switch (status) {
@@ -170,6 +197,16 @@ const TaskDashboard = () => {
             default: return roleName.charAt(0).toUpperCase() + roleName.slice(1);
         }
     };
+
+    // Helper for member avatar
+    const getAvatar = (username) => username?.[0]?.toUpperCase() || '?';
+    // Helper for assigned date
+    const formatAssignedAt = (date) => date ? new Date(date).toLocaleDateString() : '';
+    // Members array
+    const members = taskDetails?.userAssignments || [];
+
+    // Helper: get usernames already assigned to the task
+    const assignedUsernames = (members || []).map(m => m.username);
 
     // Render loading or error states
     if (loading) {
@@ -542,6 +579,90 @@ const TaskDashboard = () => {
         });
     };
 
+    // Add member to task handler
+    const handleAddTaskMember = async (username) => {
+        try {
+            const token = getToken();
+            const tenantId = getTenantId();
+            if (!token || !tenantId) {
+                setToast({ isOpen: true, message: 'Authentication or tenant info missing. Please login again.' });
+                return;
+            }
+            const response = await axios.post(
+                USER_TASK_ASSIGNMENT.ADD_TASK_MEMBER,
+                { taskId: taskDetails.id, username },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'X-TenantID': tenantId,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            setToast({ isOpen: true, message: 'Member added to task!' });
+            setShowAddMemberPopup(false);
+            // Refresh task details to update assigned members
+            if (taskId) {
+                const refreshed = await axios.get(TASK_ENDPOINTS.GET_TASK(taskId), {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        'X-TenantID': tenantId
+                    }
+                });
+                setTaskDetails(refreshed.data);
+            }
+        } catch (err) {
+            let msg = 'Failed to add member to task.';
+            if (err.response?.data?.message) msg = err.response.data.message;
+            setToast({ isOpen: true, message: msg });
+        }
+    };
+
+    const handleRemoveTaskMember = (username) => {
+        setConfirmDialog({
+            open: true,
+            message: `Are you sure you want to remove ${username} from this task?`,
+            onConfirm: async () => {
+                try {
+                    const token = getToken();
+                    const tenantId = getTenantId();
+                    if (!token || !tenantId) {
+                        setToast({ isOpen: true, message: 'Authentication or tenant info missing.' });
+                        return;
+                    }
+                    await axios.delete(
+                        USER_TASK_ASSIGNMENT.REMOVE_TASK_MEMBER(taskDetails.id, username),
+                        {
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'X-TenantID': tenantId,
+                            }
+                        }
+                    );
+                    setToast({ isOpen: true, message: 'Member removed from task.' });
+                    // Refresh task details to update assigned members
+                    if (taskId) {
+                        const refreshed = await axios.get(TASK_ENDPOINTS.GET_TASK(taskId), {
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json',
+                                'X-TenantID': tenantId
+                            }
+                        });
+                        setTaskDetails(refreshed.data);
+                    }
+                } catch (err) {
+                    let msg = 'Failed to remove member from task.';
+                    if (err.response?.data?.message) msg = err.response.data.message;
+                    setToast({ isOpen: true, message: msg });
+                } finally {
+                    setConfirmDialog({ open: false });
+                }
+            }
+        });
+    };
+
     return (
         <div className="task-dashboard">
             {/* Breadcrumb Navigation */}
@@ -734,21 +855,107 @@ const TaskDashboard = () => {
                         handleDownloadAttachment={handleDownloadAttachment}
                     />
                 </div>
+
+                {/* Assigned Members Section */}
+                <div className="team-section">
+                    <div className="section-header-row">
+                        <h2 className="card-title">Assigned Members</h2>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <button className="view-all-section-btn" onClick={() => setShowMembersPopup(true)}>
+                                <FaEye style={{ marginRight: 6 }} /> View
+                            </button>
+                            <button className="view-all-section-btn" onClick={() => setShowAddMemberPopup(true)}>
+                                <FaUserPlus style={{ marginRight: 6 }} /> Member
+                            </button>
+                        </div>
+                    </div>
+                    <div className="team-grid">
+                        {members.slice(0, 4).map((member, idx) => (
+                            <div key={member.username + idx} className="team-member-card">
+                                <div className="member-avatar">{getAvatar(member.username)}</div>
+                                <div className="member-info">
+                                    <h3>{member.username}</h3>
+                                    <div className="member-assigned">Assigned: {formatAssignedAt(member.assignedAt)}</div>
+                                </div>
+                                <button className="remove-member-button" title="Remove member" onClick={() => handleRemoveTaskMember(member.username)}>
+                                    <FaTrash />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
 
-            {/* Delete Confirmation Modal (not shown in images, but good practice to keep) */}
-            {/* {showDeleteConfirm && (
-                <div className="modal-overlay">
-                    <div className="modal">
-                        <h2>Delete Task</h2>
-                        <p>Are you sure you want to delete this task? This action cannot be undone.</p>
-                        <div className="modal-actions">
-                            <button className="cancel-button" onClick={() => setShowDeleteConfirm(false)}>Cancel</button>
-                            <button className="delete-button" onClick={() => { setShowDeleteConfirm(false); }}>Delete</button>
+            {/* Members Popup */}
+            {showMembersPopup && (
+                <div className="popup-overlay">
+                    <div className="tasks-popup">
+                        <div className="popup-header">
+                            <h2>All Assigned Members</h2>
+                            <button className="close-button" onClick={() => setShowMembersPopup(false)}>
+                                <FaTimes />
+                            </button>
+                        </div>
+                        <div className="popup-content">
+                            <div className="tasks-grid">
+                                {members.map((member, idx) => (
+                                    <div key={member.username + idx} className="task-card">
+                                        <div className="task-header">
+                                            <div className="member-info">
+                                                <h3>{member.username}</h3>
+                                            </div>
+                                            <button className="remove-member-button" title="Remove member" onClick={() => handleRemoveTaskMember(member.username)}>
+                                                <FaTrash />
+                                            </button>
+                                        </div>
+                                        <div className="milestone-details">
+                                            <span>Assigned: {formatAssignedAt(member.assignedAt)}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                                {members.length === 0 && (
+                                    <div className="no-results-message">
+                                        <p>No assigned members found.</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
-            )} */}
+            )}
+
+            {/* Add Member Popup */}
+            {showAddMemberPopup && (
+                <div className="popup-overlay">
+                    <div className="tasks-popup">
+                        <div className="popup-header">
+                            <h2>Add Team Member</h2>
+                            <button className="close-button" onClick={() => setShowAddMemberPopup(false)}>
+                                <FaTimes />
+                            </button>
+                        </div>
+                        <div className="popup-content">
+                            <div className="tasks-grid">
+                                {(projectData?.userAssignments?.filter(m => m.roleInProject === 'ROLE_TEAM_MEMBER' && !assignedUsernames.includes(m.username)) || []).map((member, idx) => (
+                                    <div key={member.username + idx} className="team-member-card add-member-card">
+                                        <div className="member-avatar">{getAvatar(member.username)}</div>
+                                        <div className="member-info">
+                                            <h3>{member.username}</h3>
+                                        </div>
+                                        <button className="add-member-btn" onClick={() => handleAddTaskMember(member.username)}>Add Member</button>
+                                    </div>
+                                ))}
+                                {((projectData?.userAssignments?.filter(m => m.roleInProject === 'ROLE_TEAM_MEMBER' && !assignedUsernames.includes(m.username)) || []).length === 0) && (
+                                    <div className="no-results-message">
+                                        <p>No team members available to add.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <ConfirmDialog
                 isOpen={confirmDialog.open}
                 message={confirmDialog.message}
