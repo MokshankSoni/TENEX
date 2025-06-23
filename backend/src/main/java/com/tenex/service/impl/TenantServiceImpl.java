@@ -3,9 +3,13 @@ package com.tenex.service.impl;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.sql.DataSource;
+import java.sql.DatabaseMetaData;
 
 import com.tenex.entity.master.Role;
 import org.slf4j.Logger;
@@ -233,5 +237,94 @@ public class TenantServiceImpl implements TenantService {
             logger.error("Error initializing default roles: {}", e.getMessage());
             throw new RuntimeException("Failed to initialize default roles", e);
         }
+    }
+
+    /**
+     * Returns a list of all tenant schemas in the database, excluding system
+     * schemas.
+     */
+    public List<String> getAllTenantSchemas() {
+        List<String> schemas = new ArrayList<>();
+        try (Connection connection = dataSource.getConnection()) {
+            ResultSet rs = connection.getMetaData().getSchemas();
+            while (rs.next()) {
+                String schemaName = rs.getString("TABLE_SCHEM");
+                // Filter out system schemas (adjust as needed for your DBMS)
+                if (!schemaName.equalsIgnoreCase("information_schema") &&
+                        !schemaName.equalsIgnoreCase("pg_catalog") &&
+                        !schemaName.equalsIgnoreCase("public")) {
+                    schemas.add(schemaName);
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("Error fetching schemas: {}", e.getMessage());
+            throw new RuntimeException("Error fetching tenant schemas", e);
+        }
+        return schemas;
+    }
+
+    /**
+     * Returns basic information about a specific tenant schema.
+     */
+    public Map<String, Object> getTenantSchemaInfo(String schemaName) {
+        Map<String, Object> schemaInfo = new HashMap<>();
+
+        try (Connection connection = dataSource.getConnection()) {
+            DatabaseMetaData metaData = connection.getMetaData();
+
+            // Basic schema info
+            schemaInfo.put("schemaName", schemaName);
+            schemaInfo.put("exists", tenantExists(schemaName));
+
+            if (!tenantExists(schemaName)) {
+                return schemaInfo;
+            }
+
+            // Get tables
+            ResultSet tables = metaData.getTables(null, schemaName, "%", new String[] { "TABLE" });
+            List<String> tableNames = new ArrayList<>();
+            while (tables.next()) {
+                tableNames.add(tables.getString("TABLE_NAME"));
+            }
+            schemaInfo.put("tableCount", tableNames.size());
+
+            // Calculate total schema size
+            long totalSize = 0;
+            Map<String, Object> tableDetails = new HashMap<>();
+
+            for (String tableName : tableNames) {
+                Map<String, Object> tableInfo = new HashMap<>();
+
+                // Get row count
+                try {
+                    String countQuery = "SELECT COUNT(*) FROM " + schemaName + "." + tableName;
+                    Integer rowCount = jdbcTemplate.queryForObject(countQuery, Integer.class);
+                    tableInfo.put("rowCount", rowCount != null ? rowCount : 0);
+
+                    // Get table size (approximate)
+                    String sizeQuery = "SELECT pg_total_relation_size('" + schemaName + "." + tableName + "')";
+                    Long tableSize = jdbcTemplate.queryForObject(sizeQuery, Long.class);
+                    if (tableSize != null) {
+                        totalSize += tableSize;
+                        tableInfo.put("size", tableSize);
+                    }
+                } catch (Exception e) {
+                    tableInfo.put("rowCount", "Error getting count");
+                    tableInfo.put("size", "Error getting size");
+                    logger.warn("Could not get info for table {}.{}: {}", schemaName, tableName, e.getMessage());
+                }
+
+                tableDetails.put(tableName, tableInfo);
+            }
+
+            schemaInfo.put("totalSize", totalSize);
+            schemaInfo.put("tableDetails", tableDetails);
+
+        } catch (SQLException e) {
+            logger.error("Error fetching schema info for {}: {}", schemaName, e.getMessage());
+            schemaInfo.put("error", "Error fetching schema information: " + e.getMessage());
+        }
+
+        return schemaInfo;
     }
 }

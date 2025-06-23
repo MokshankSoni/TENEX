@@ -126,6 +126,7 @@ public class AuthController {
         } else {
             for (String role : strRoles) {
                 Role r = switch (role) {
+                    case "super" -> roleRepository.findByName(ERole.ROLE_SUPER_ADMIN).orElseThrow();
                     case "admin" -> roleRepository.findByName(ERole.ROLE_TENANT_ADMIN).orElseThrow();
                     case "pm" -> roleRepository.findByName(ERole.ROLE_PROJECT_MANAGER).orElseThrow();
                     case "client" -> roleRepository.findByName(ERole.ROLE_CLIENT).orElseThrow();
@@ -141,10 +142,20 @@ public class AuthController {
                     signUpRequest.getEmail(),
                     encoder.encode(signUpRequest.getPassword()));
             user.setRoles(roles);
+
+            // Set isSuperAdmin flag if user has super admin role
+            boolean isSuperAdmin = strRoles != null && strRoles.contains("super");
+            user.setSuperAdmin(isSuperAdmin);
+
             userRepository.save(user);
         } else {
             // Update existing user's roles
             user.setRoles(roles);
+
+            // Update isSuperAdmin flag if user has super admin role
+            boolean isSuperAdmin = strRoles != null && strRoles.contains("super");
+            user.setSuperAdmin(isSuperAdmin);
+
             userRepository.save(user);
         }
 
@@ -154,7 +165,8 @@ public class AuthController {
         mapping.setUsername(signUpRequest.getUsername());
         mapping.setEmail(signUpRequest.getEmail());
         mapping.setUser(user);
-        mapping.setTenantAdmin(strRoles != null && strRoles.contains("admin"));
+        // Set tenant admin if user has admin or super admin role
+        mapping.setTenantAdmin(strRoles != null && (strRoles.contains("admin")));
 
         userTenantMappingRepository.save(mapping);
 
